@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Unrestricted Upload of File with Dangerous Type</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: 1;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="static/pandoc-theme.css" />
+  <link rel="stylesheet" href="static/prism.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <script src="static/prism.js"></script>
+</head>
+<body>
+<main>
+<header id="title-block-header">
+<h1 class="title">Unrestricted Upload of File with Dangerous Type</h1>
+</header>
+<nav id="toc" role="doc-toc">
+<h2 id="toc-title">Contents</h2>
+<ul>
+<li><a href="#how-can-an-attacker-exploit-the-vulnerability"
+id="toc-how-can-an-attacker-exploit-the-vulnerability">How Can an
+Attacker Exploit the Vulnerability?</a></li>
+<li><a href="#how-can-you-fix-the-vulnerability"
+id="toc-how-can-you-fix-the-vulnerability">How Can You Fix the
+Vulnerability?</a></li>
+</ul>
+</nav>
+<p>The software allows the attacker to upload files of dangerous types.
+This allows an attacker to upload a script or application that is
+executed by the server/software. (<a
+href="https://cwe.mitre.org/data/definitions/434.html">CWE-434</a>)</p>
+<h2 id="how-can-an-attacker-exploit-the-vulnerability">How Can an
+Attacker Exploit the Vulnerability?</h2>
+<p>If a server software offers the functionality to upload files, this
+may provide attackers the ability to also upload malicious files to the
+server if it does not validate the files.</p>
+<p>A common variant is that the software saves the file to a folder
+within the web document root (e.g., a folder named
+<code>uploads</code>:</p>
+<pre class="language-python line-numbers"><code>
+import cgi, os
+import cgitb
+cgitb.enable()
+
+form = cgi.FieldStorage()
+fileitem = form['filename']
+
+# check if the file has been uploaded
+if fileitem.filename:
+    # strip the leading path from the file name
+    filename = os.path.basename(fileitem.filename)
+
+    # write the file to the server
+    open("uploads/" + filename, 'wb').write(fileitem.file.read())
+</code></pre>
+<p>If the file is not validated, the attacker can, for example, upload a
+malicious executable script such as a PHP file (e.g.,
+<code>malicious_file.php</code>). When this file is requested by a
+browser from the web server (e.g., by opening
+<code>www.example.org/uploads/malicious_file.php</code>), the web server
+may execute this script. The attacker can thus <strong>inject and
+execute arbitrary code</strong> that, for example, <strong>reads
+arbitrary files on the server or connects to the database</strong>.</p>
+<p>Another possible variant of the attack is that the attacker can use
+the server to upload arbitrary files and then link to them, effectively
+using the server as storage for large files or phishing pages.</p>
+<p>If a <strong>path traversal attack</strong> is possible in addition
+to the unrestricted file upload, the attacker can place the uploaded
+file at a different path than the intended one. This could allow the
+attacker to overwrite the Python code or other files on the server.</p>
+<h2 id="how-can-you-fix-the-vulnerability">How Can You Fix the
+Vulnerability?</h2>
+<p>Each file that is uploaded to the server should be validated.</p>
+<p>The software should not only check the file extension, but preferably
+also the <strong>content or MIME type of the file</strong> (for example,
+whether the file is a valid image if an image is to be uploaded), since
+the file extension can be manipulated. Furthermore, the software should
+also check the <strong>size of the file</strong>.</p>
+<p>Ideally, the file should be given a randomly generated filename
+instead of the original filename. This may also help to prevent a user
+from accidentally overwriting an existing file. If the original file
+name has to be used, it must be ensured that only <strong>valid
+characters are contained in the file name</strong>. Otherwise, path
+traversal attacks are possible that allow an attacker to place the file
+at a different path than the intended one.</p>
+<p>To fix the example from the previous section using the
+<code>magic</code> library:</p>
+<pre class="language-python line-numbers"><code>
+import cgi, os
+import cgitb
+cgitb.enable()
+import magic
+
+form = cgi.FieldStorage()
+fileitem = form['filename']
+
+# check if the file has been uploaded
+if fileitem.filename:
+    # strip the leading path from the file name
+    filename = os.path.basename(fileitem.filename)
+
+    if magic.from_buffer(fileitem.file.read(), mime=True) != 'image/jpeg':
+        print("The file must be a jpeg.")
+    else:
+        # write the file to the server
+        open("uploads/" + filename, 'wb').write(fileitem.file.read())
+</code></pre>
+</main>
+</body>
+</html>

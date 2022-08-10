@@ -1,0 +1,411 @@
+# TEMPLATES
+# ---------
+# The templates describe how the queries are constructed:
+# - The key is the name of the template (i.e., the query category's name).
+#   Example: "php-tutorials"
+# - The value defines the template and consists of a list (indicated by dashes)
+#   of term groups. The queries are constructed by looking up the terms in the
+#   term groups (e.g., "tutorial", "example" and "how to" for the term group
+#   "tutorial") and generating each possible combination of these terms
+#   (cartesian product). Each combination of terms is a separate query. The
+#   order of the term groups is preserved when constructing the query. The term
+#   groups are specified below.
+#   Example:
+#     Assuming a template with the term groups "group1" (with the terms "a1"
+#     and "a2") and "group2" (with the terms "b1" and "b2"). The resulting
+#     queries would be "a1 b1", "a1 b2", "a2 b1", and "a2 b2".
+
+templates:
+
+    # PHP
+    php-tutorials:
+        - php
+        - tutorials-basic
+    php-subjects-generic-access-control:
+        - php
+        - subjects-access-control
+        - tutorial
+    php-subjects-generic-cryptography:
+        - php
+        - subjects-cryptography
+        - tutorial
+    php-subjects-generic-injection:
+        - php
+        - subjects-injection
+        - tutorial
+    php-subjects-generic-authentication:
+        - php
+        - subjects-authentication
+        - tutorial
+    php-subjects-generic-misc:
+        - php
+        - subjects-misc
+        - tutorial
+    php-subjects-specific:
+        - php
+        - php-subjects
+        - tutorial
+    php-vulnerabilities:
+        - php
+        - php-vulnerabilities
+        - tutorial
+
+    # Python
+    python-tutorials:
+        - python
+        - tutorials-basic
+    python-subjects-generic-access-control:
+        - python
+        - subjects-access-control
+        - tutorial
+    python-subjects-generic-cryptography:
+        - python
+        - subjects-cryptography
+        - tutorial
+    python-subjects-generic-injection:
+        - python
+        - subjects-injection
+        - tutorial
+    python-subjects-generic-authentication:
+        - python
+        - subjects-authentication
+        - tutorial
+    python-subjects-generic-misc:
+        - python
+        - subjects-misc
+        - tutorial
+    python-subjects-specific:
+        - python
+        - python-subjects
+        - tutorial
+    python-vulnerabilities:
+        - python
+        - python-vulnerabilities
+        - tutorial
+
+    # JavaScript
+    js-tutorials:
+        - js
+        - tutorials-basic
+    js-subjects-generic-access-control:
+        - js
+        - subjects-access-control
+        - tutorial
+    js-subjects-generic-cryptography:
+        - js
+        - subjects-cryptography
+        - tutorial
+    js-subjects-generic-injection:
+        - js
+        - subjects-injection
+        - tutorial
+    js-subjects-generic-authentication:
+        - js
+        - subjects-authentication
+        - tutorial
+    js-subjects-generic-misc:
+        - js
+        - subjects-misc
+        - tutorial
+    js-subjects-specific:
+        - js
+        - js-subjects
+        - tutorial
+    js-vulnerabilities:
+        - js
+        - js-vulnerabilities
+        - tutorial
+
+    # Java
+    java-tutorials:
+        - java
+        - tutorials-basic
+    java-subjects-generic-access-control:
+        - java
+        - subjects-access-control
+        - tutorial
+    java-subjects-generic-cryptography:
+        - java
+        - subjects-cryptography
+        - tutorial
+    java-subjects-generic-injection:
+        - java
+        - subjects-injection
+        - tutorial
+    java-subjects-generic-authentication:
+        - java
+        - subjects-authentication
+        - tutorial
+    java-subjects-generic-misc:
+        - java
+        - subjects-misc
+        - tutorial
+    java-subjects-specific:
+        - java
+        - java-subjects
+        - tutorial
+    java-vulnerabilities:
+        - java
+        - java-vulnerabilities
+        - tutorial
+
+
+# TERM GROUPS
+# -----------
+# A term groups consists of a list of terms to be used when constructing
+# queries. See templates above for more details.
+# - The key is the name of the term group.
+#   Example: "tutorial"
+# - The value defines the list (indicated by dashes) of terms.
+#   Example:
+#     The term group "tutorial" contains the terms "tutorial", "example" and "how to".
+
+terms:
+
+    tutorial:
+        - tutorial
+        - example
+        - how to
+
+    tutorials-basic:
+        - tutorial
+        - example
+        - how to
+        - learn
+        - getting started
+        - for beginners
+
+    # OWASP-A01
+    subjects-access-control:
+        - authorization
+        - access control
+        - user permissions
+        - admin panel
+        - serve file for download
+        - temporary file
+        - redirect
+        - web form
+    # OWASP-A02
+    subjects-cryptography:
+        - encryption
+        - digital signature
+        - message authentication code
+        - message digest
+        - hash
+        - password hash
+        - random number
+        - random string
+    # OWASP-A03
+    subjects-injection:
+        - validation
+        - database
+        - sql
+        - execute shell command
+        - send email
+        - search form
+        - contact form
+        - xpath
+    # OWASP-A07
+    subjects-authentication:
+        - authentication
+        - login
+        - registration
+        - change password
+        - forgot password
+        - user management
+        - session
+    # OWASP-A04, OWASP-A05, OWASP-A08, OWASP-A09
+    subjects-misc:
+        - file upload
+        - xml entity
+        - deserialization
+        - logging
+
+    php:
+        - php
+    php-subjects:
+        # StackOverflow tags
+        - ajax
+        - json
+        - cookies
+        # Google Suggestions
+        - captcha
+        - 2fa
+        - oauth2
+    php-vulnerabilities:
+        # RSPEC-2755 (CWE-611)
+        - '"simplexml_load_string( * LIBXML_NOENT"'
+        - '"load( * LIBXML_NOENT"'
+        - '"setParserProperty(XMLReader::SUBST_ENTITIES, true)"'
+        # RSPEC-5547 / RSPEC-2278 / RSPEC-5542 / RSPEC-2277 (CWE-327) [adapted]
+        - '"mcrypt_encrypt(MCRYPT_DES"'
+        - '"mcrypt_encrypt(MCRYPT_DES_COMPAT"'
+        - '"mcrypt_encrypt(MCRYPT_TRIPLEDES"'
+        - '"mcrypt_encrypt(MCRYPT_3DES"'
+        - '"mcrypt_encrypt(MCRYPT_BLOWFISH"'
+        - '"mcrypt_encrypt(MCRYPT_RC2"'
+        - '"mcrypt_encrypt(MCRYPT_RC4"'
+        - '"openssl_encrypt( * bf-ecb"'
+        - '"openssl_encrypt( * des-ede3"'
+        - '"openssl_encrypt( * des-ofb"'
+        - '"openssl_encrypt( * rc2-cbc"'
+        - '"openssl_encrypt( * rc4"'
+        - '"openssl_encrypt( * des-ede3-cfb"'
+        - '"openssl_encrypt( * des-ecb"'
+        - '"openssl_encrypt( * rc2-ecb"'
+        - '"openssl_public_encrypt( * OPENSSL_NO_PADDING"'
+        - '"mcrypt_encrypt( * ecb"'
+        - '"openssl_encrypt( * ecb"'
+        # RSPEC-5527 (CWE-297)
+        - '"curl_setopt( * CURLOPT_SSL_VERIFYHOST, FALSE"'
+        - '"curl_setopt( * CURLOPT_SSL_VERIFYHOST, 0"'
+        # RSPEC-4830 (CWE-295)
+        - '"curl_setopt( * CURLOPT_SSL_VERIFYPEER, FALSE"'
+        - '"curl_setopt( * CURLOPT_SSL_VERIFYPEER, 0"'
+        # RSPEC-4423 (CWE-327) [adapted]
+        # https://www.php.net/manual/en/function.stream-socket-enable-crypto.php
+        - '"STREAM_CRYPTO_METHOD_SSL"'
+        - '"STREAM_CRYPTO_METHOD_TLSv1_0"'
+        - '"STREAM_CRYPTO_METHOD_TLSv1_1"'
+        # RSPEC-2070 / RSPEC-4790 (CWE-327)
+        - '"md5("'
+        - '"sha1("'
+        # RSPEC-2245 (CWE-330)
+        - '"rand("'
+        - '"mt_rand("'
+
+    python:
+        - python
+    python-subjects:
+        # StackOverflow tags
+        - multithreading
+        - subprocess
+        - json
+    python-vulnerabilities:
+        # RSPEC-2755 (CWE-611)
+        - '"etree.XMLParser()" -resolve_entities'
+        - '"etree.XMLParser(resolve_entities=True"'
+        - '"etree.XSLTAccessControl(read_network=True, write_network=False"'
+        # RSPEC-5659 (CWE-347)
+        - '"jwt.decode( * verify=False"'
+        - '"jwt.decode( * verify_signature: False"'
+        - '"jwt.process_jwt("'
+        # RSPEC-5547 / RSPEC-5542 (CWE-327) [adapted]
+        - '"DES.new("'
+        - '"DES3.new("'
+        - '"ARC2.new("'
+        - '"ARC4.new("'
+        - '"Blowfish.new("'
+        - '"Cipher(algorithms.TripleDES("'
+        - '"Cipher(algorithms.Blowfish("'
+        - '"Cipher(algorithms.ARC4("'
+        - '"pyDes.des("'
+        - '"pyDes.triple_des("'
+        - '"DES.new("'
+        - '"DES3.new("'
+        - '"Blowfish.new("'
+        - '"ARC2.new("'
+        - '"ARC4.new("'
+        - '"AES.new( * AES.MODE_ECB"'
+        - '"PKCS1_v1_5.new("'
+        - '"Cipher(algorithms.AES( * modes.ECB("'
+        - '"encrypt( * padding.PKCS1v15()"'
+        - '"decrypt( * padding.PKCS1v15()"'
+        - '"Cipher( * modes.ECB("'
+        # RSPEC-5527 (CWE-297)
+        - '"ssl._create_unverified_context()"'
+        - '"ssl._create_stdlib_context()"'
+        # RSPEC-5445 (CWE-377)
+        - '"tempfile.mktemp("'
+        # RSPEC-4830 (CWE-295)
+        - '"requests.request( * verify=False"'
+        - '"requests.get( * verify=False"'
+        # RSPEC-4423 (CWE-326) [adapted]
+        # https://www.pyopenssl.org/en/stable/api/ssl.html
+        # https://docs.python.org/3/library/ssl.html#ssl.SSLContext
+        - '"SSL.Context(SSL.SSL"'
+        - '"SSL.Context(SSL.TLSv1_1_METHOD"'
+        - '"SSL.Context(SSL.TLS1_1_VERSION"'
+        - '"ssl.SSLContext(ssl.PROTOCOL_SSL"'
+        - '"ssl.SSLContext(ssl.PROTOCOL_TLSv1_1"'
+        # RSPEC-4790 (CWE-327)
+        - '"md5("'
+        - '"sha1("'
+        # RSPEC-2245 (CWE-330)
+        - '"getrandbits("'
+        - '"randint("'
+        - '"random()"'
+
+    js:
+        - javascript
+    js-subjects:
+        # StackOverflow tags
+        - ajax
+        - json
+        - cookies
+    js-vulnerabilities:
+        # RSPEC-2755 (CWE-611)
+        - '"libxmljs.parseXmlString( * noent: true"'
+        # RSPEC-5659 (CWE-347)
+        - '"jwt.sign( * algorithm: none"'
+        - '"jwt.verify( * algorithms * none"'
+        # RSPEC-5547 / RSPEC-5542 (CWE-327) [adapted]
+        - '"crypto.createCipheriv(DES"'
+        - '"crypto.createCipheriv(DES-EDE"'
+        - '"crypto.createCipheriv(DES-EDE3"'
+        - '"crypto.createCipheriv(RC2"'
+        - '"crypto.createCipheriv(RC4"'
+        - '"crypto.createCipheriv(BF"'
+        - '"crypto.createCipheriv(AES-128-ECB"'
+        - '"crypto.createCipheriv( * ECB"'
+        # RSPEC-4790 (CWE-327)
+        - '"crypto.createHash(md5)"'
+        - '"crypto.createHash(sha1)"'
+        # RSPEC-2245 (CWE-330)
+        - '"Math.random()"'
+
+    java:
+        - java
+    java-subjects:
+        # StackOverflow tags
+        - multithreading
+        - json
+        - jsp
+        - jdbc
+    java-vulnerabilities:
+        # RSPEC-2755 (CWE-611)
+        - '"DocumentBuilderFactory.newInstance()"'
+        - '"SAXParserFactory.newInstance()"'
+        - '"XMLInputFactory.newInstance()"'
+        - '"javax.xml.transform.TransformerFactory.newInstance()"'
+        - '"SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI)"'
+        - '"new SAXReader()"'
+        - '"new SAXBuilder()"'
+        # RSPEC-5659 (CWE-347)
+        - '"Jwts.builder() * compact()" -signWith'
+        - '"Jwts.parser() * parse(" -parseClaimsJws'
+        - '"JWT.create() * sign(Algorithm.none())"'
+        - '"JWT.require(Algorithm.none())"'
+        # RSPEC-5547 / RSPEC-5542 (CWE-327) [adapted]
+        - '"Cipher.getInstance(DES"'
+        - '"Cipher.getInstance(DESede"'
+        - '"Cipher.getInstance(RC2"'
+        - '"Cipher.getInstance(RC4"'
+        - '"Cipher.getInstance(Blowfish"'
+        - '"new NullCipher();"'
+        - '"Cipher.getInstance(AES/ECB"'
+        - '"Cipher.getInstance(RSA/None/NoPadding)"'
+        - '"Cipher.getInstance( * ECB"'
+        # RSPEC-4423 (CWE-326) [adapted]
+        # https://docs.oracle.com/javase/7/docs/technotes/guides/security/StandardNames.html#SSLContext
+        # https://square.github.io/okhttp/4.x/okhttp/okhttp3/-tls-version/
+        - '"SSLContext.getInstance(SSL"'
+        - '"SSLContext.getInstance(TLSv1.1"'
+        - '"new ConnectionSpec.Builder * tlsVersions(TlsVersion.SSL"'
+        - '"new ConnectionSpec.Builder * tlsVersions(TlsVersion.TLS_1_0"'
+        - '"new ConnectionSpec.Builder * tlsVersions(TlsVersion.TLS_1_1"'
+        # RSPEC-4790 (CWE-327)
+        - '"MessageDigest.getInstance(MD5)"'
+        - '"MessageDigest.getInstance(SHA1)"'
+        # RSPEC-2245 (CWE-330)
+        - '"new Random()"'

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Improper Certificate Validation</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: 1;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="static/pandoc-theme.css" />
+  <link rel="stylesheet" href="static/prism.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <script src="static/prism.js"></script>
+</head>
+<body>
+<main>
+<header id="title-block-header">
+<h1 class="title">Improper Certificate Validation</h1>
+</header>
+<nav id="toc" role="doc-toc">
+<h2 id="toc-title">Contents</h2>
+<ul>
+<li><a href="#how-can-an-attacker-exploit-the-vulnerability"
+id="toc-how-can-an-attacker-exploit-the-vulnerability">How Can an
+Attacker Exploit the Vulnerability?</a></li>
+<li><a href="#how-can-you-fix-the-vulnerability"
+id="toc-how-can-you-fix-the-vulnerability">How Can You Fix the
+Vulnerability?</a></li>
+</ul>
+</nav>
+<p>The software does not validate or incorrectly validates a
+certificate. This might allow an attacker to spoof a trusted server or
+act as a man-in-the-middle by interfering in the communication path
+between the host and client. The attacker might be able to intercept
+sensitive data or send data that appear to originate from a trusted
+server. (<a
+href="https://cwe.mitre.org/data/definitions/295.html">CWE-295</a>)</p>
+<h2 id="how-can-an-attacker-exploit-the-vulnerability">How Can an
+Attacker Exploit the Vulnerability?</h2>
+<p>When a client connects to a server over TLS (e.g. https), a TLS
+handshake is performed. As part of the TLS handshake, the server sends a
+message to the client containing the server’s TLS certificate. Then, the
+client validates the certificate to ensure that the certificate can be
+trusted (i.e., that the certificate is signed by a trusted certificate
+authority) and that the certificate matches the domain the client is
+interacting with. This process confirms that the server is who it claims
+to be and that the client is interacting with the real owner of the
+domain.</p>
+<p>If the client does not validate the server’s TLS certificate, this
+<strong>significantly increases the risk that the client will fall
+victim to a Man in the Middle (MitM) attack</strong>. In this attack, an
+attacker secretly reads, relays, and possibly modifies the
+communications between the server and the client. The two parties
+believe that they are directly communicating with each other, as the
+attacker has inserted themselves in the connection between the two
+parties.</p>
+<p>A Man in the Middle attack poses a major security risk, as the
+attacker can then, for example, <strong>harvest passwords or API keys,
+manipulate the content of web pages viewed by the client</strong>, or,
+in case of online banking, <strong>change the destination account number
+and transfer amount of a transfer</strong>.</p>
+<p>The TLS certificate validation is often disabled if a client should
+connect to a server that uses an untrusted self-signed certificate for
+which the validation fails.</p>
+<p>In Python, the validation of TLS certificates is often disabled by
+using the functions in the <code>requests</code> module with
+<code>verify=False</code>:</p>
+<pre class="language-python line-numbers" data-line="4"><code>
+import requests
+
+url = "https://example.org"
+result = requests.get(url, verify=False)
+</code></pre>
+<h2 id="how-can-you-fix-the-vulnerability">How Can You Fix the
+Vulnerability?</h2>
+<p>Most libraries already validate TLS certificates by default unless
+validation is manually disabled by the developer. Therefore, the
+<strong>validation should never be disabled manually</strong>.</p>
+<p>If the TLS certificate validation fails due to a self-signed
+certificate, the self-signed certificate should be added to the host’s
+trusted certificates for the validation to succeed. It is then no longer
+necessary to disable the TLS certificate validation.</p>
+<p>To fix the example from the previous section, set the
+<code>verify</code> parameter to <code>True</code> or omit it, as this
+is the default value:</p>
+<pre class="language-python line-numbers" data-line="4"><code>
+import requests
+
+url = "https://example.org"
+result = requests.get(url, verify=True)
+</code></pre>
+</main>
+</body>
+</html>

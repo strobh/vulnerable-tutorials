@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Use of Hard-coded Passwords/Credentials</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: 1;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="static/pandoc-theme.css" />
+  <link rel="stylesheet" href="static/prism.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <script src="static/prism.js"></script>
+</head>
+<body>
+<main>
+<header id="title-block-header">
+<h1 class="title">Use of Hard-coded Passwords/Credentials</h1>
+</header>
+<nav id="toc" role="doc-toc">
+<h2 id="toc-title">Contents</h2>
+<ul>
+<li><a href="#how-can-an-attacker-exploit-the-vulnerability"
+id="toc-how-can-an-attacker-exploit-the-vulnerability">How Can an
+Attacker Exploit the Vulnerability?</a></li>
+<li><a href="#how-can-you-fix-the-vulnerability"
+id="toc-how-can-you-fix-the-vulnerability">How Can You Fix the
+Vulnerability?</a></li>
+</ul>
+</nav>
+<p>The software uses hard-coded credentials, such as a password or a
+cryptographic key, to authenticate users or to encrypt data. This
+hard-coded credentials are the same for each installation of the
+software, and they usually cannot be changed without manually modifying
+the program. If the password is ever discovered or published (e.g., in
+the source code on GitHub), then anybody with knowledge of this password
+can access the product. (<a
+href="https://cwe.mitre.org/data/definitions/798.html">CWE-798</a>)</p>
+<h2 id="how-can-an-attacker-exploit-the-vulnerability">How Can an
+Attacker Exploit the Vulnerability?</h2>
+<p>If the username and password to log into an application are
+hard-coded into the software, there is a risk that an attacker may gain
+access to these credentials. The attacker would then be able to log into
+the software and cause damage.</p>
+<p>There are many ways an attacker can obtain hard-coded
+credentials:</p>
+<ul>
+<li>If the source code is publicly available (e.g., on GitHub or as
+software download), an attacker can find the username and password in
+the source code and log into the application.</li>
+<li>If the software has been compiled and published (e.g. as iOS app,
+Android app, or <code>jar</code> file for Java applications), an
+attacker can decompile the software and find the credentials in it.</li>
+<li>If there are several installations of the software (i.e., the
+software is used by several people/organizations), the password is the
+same for each installation. A user who knows the password of one
+installation can also log in to another installation (of another
+organization). This problem also exists with default passwords that are
+the same in every installation.</li>
+<li>The password is known to employees or software developers who
+disclose it to an attacker.</li>
+<li>And many more …</li>
+</ul>
+<h2 id="how-can-you-fix-the-vulnerability">How Can You Fix the
+Vulnerability?</h2>
+<p>Instead of hard-coded credentials, the application could have a
+“first login” mode where no credentials are required. When logging in
+for the first time, the <strong>user is required to enter a strong
+password that is stored on the system</strong>.</p>
+<p>The password should be hashed with a cryptographic hash function and
+stored in a database or a configuration file. A cryptographic hash
+function is an algorithm that maps data (e.g., a password) to fixed-size
+values (called “hash”). It is a one-way function. That means it is
+<strong>not possible to invert or reverse</strong> the computation:
+Given a password you can easily calculate the hash, but you cannot
+calculate the password if you only know the hash of it.</p>
+<pre><code>Password  ---&gt;  Hash
+Hash      -/-&gt;  Password (not possible)</code></pre>
+<p>Example: Password hashes (using the insecure <code>md5</code> hash
+function)</p>
+<pre><code>password123   ---&gt;  482c811da5d5b4bc6d497ffa98491e38
+password1234  ---&gt;  bdc87b9c894da5168059e00ebffb9077</code></pre>
+<p>An attacker looking for the password to a hash has no choice but to
+use a <strong>brute-force attack</strong> to crack the password hashes.
+The attacker generates billions of possible passwords, calculates the
+hashes of them, and hopes that he finds the correct hash (and thus the
+corresponding password). That is why it is very important that the hash
+function is not too easy to compute. If the software uses a fast hash
+function (such as <code>md5</code> or <code>sha256</code>) for the
+passwords, the hashes can be calculated very efficiently: Modern GPUs
+can calculate more than a million hashes per second. So an attacker can
+try through many passwords very quickly and may be able to <strong>find
+a password for the corresponding hash after only a few
+seconds</strong>.</p>
+<p>This is simplified by the fact that many users have bad passwords
+that can be found in lists of common passwords (e.g., from previous
+password breaches on other platforms). Thus, an attacker first
+calculates the hashes of known passwords in his brute-force attack.
+These bad passwords are, therefore, cracked very quickly.</p>
+<p>For this reason, you should only use <strong>hash functions designed
+for hashing passwords, such as bcrypt or argon2</strong>. The
+calculation of these hash algorithms requires a certain amount of
+computational effort, which <strong>slows down the calculation
+considerably</strong> (e.g., to only 5 password hashes per second) and
+makes it harder to try billions of passwords:</p>
+<pre class="language-php line-numbers"><code>
+// REGISTRATION: when the user creates an account
+// ------------
+
+// password entered by the user
+$password = $_POST["password"];
+
+// hash the password using bcrypt algorithm and store it in the database
+$pw_hash = password_hash($password, PASSWORD_DEFAULT);
+
+
+
+// LOGIN: when the user logs in
+// ------------
+
+// password entered by the user
+$password = $_POST["password"];
+
+// load password hash from the database
+$pw_hash = load_pw_from_database();
+
+// verify that the correct password was entered
+if (password_verify($password, $pw_hash)) {
+    echo "correct password";
+}
+else {
+    echo "incorrect password"
+}
+</code></pre>
+<p>The next problem is that all users who have the same password also
+have the same password hash. If an attacker finds the password to a
+hash, he <strong>knows the password for all users with this password
+hash</strong>.</p>
+<p>To prevent this, the code snippet above <strong>generates a random
+string</strong> (called <code>salt</code>) in
+<code>password_hash()</code> <strong>that is hashed together with the
+password</strong> and that is different for each user.</p>
+<p>Example: Password hashes with salt (using the <code>bcrypt</code>
+hash function)</p>
+<pre><code>password123 + ddsYzDfKAH4F9fOYVh9Mve  ---&gt;  AVAlfghXiTW59Vbt74cpS.AMn.i5rte
+password123 + 0Vl2RYbcb764tDaf44M2lO  ---&gt;  6aSZIA0a7mTrKunoYkAXEH/CGNKBbMa</code></pre>
+<p>The same password (<code>password123</code>), but with different
+salts (<code>ddsYzDfKAH4F9fOYVh9Mve</code> and
+<code>0Vl2RYbcb764tDaf44M2lO</code>), results in different hashes. The
+advantage is that an attacker can no longer try to calculate hashes for
+all users at the same time. Instead, the attacker has to try passwords
+for each salt (and thus each user) individually. For example,
+<code>password123+saltA</code> and <code>test123+saltA</code> for user A
+and <code>password123+saltB</code> and <code>test123+saltB</code> for
+user B. This <strong>slows down the attacker even more and makes it
+practically impossible to find out the passwords for all
+users</strong>.</p>
+<p><em>Note</em>: The salt must be stored in the database for each user
+to be able to calculate the hash again later (e.g. when the user logs
+in). If you use <code>password_hash()</code> the salt is included in the
+password hash and you do not have to store it manually.</p>
+</main>
+</body>
+</html>

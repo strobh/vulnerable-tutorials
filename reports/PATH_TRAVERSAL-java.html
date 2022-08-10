@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Path Traversal</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: 1;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="static/pandoc-theme.css" />
+  <link rel="stylesheet" href="static/prism.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <script src="static/prism.js"></script>
+</head>
+<body>
+<main>
+<header id="title-block-header">
+<h1 class="title">Path Traversal</h1>
+</header>
+<nav id="toc" role="doc-toc">
+<h2 id="toc-title">Contents</h2>
+<ul>
+<li><a href="#how-can-an-attacker-exploit-the-vulnerability"
+id="toc-how-can-an-attacker-exploit-the-vulnerability">How Can an
+Attacker Exploit the Vulnerability?</a></li>
+<li><a href="#how-can-you-fix-the-vulnerability"
+id="toc-how-can-you-fix-the-vulnerability">How Can You Fix the
+Vulnerability?</a></li>
+</ul>
+</nav>
+<p>The software uses input from a user to construct a path (for a file
+or directory) without neutralizing special characters like
+<code>..</code>. This allows an attacker to manipulate the path such
+that files or directories outside of the intended directory are
+accessed. For example, if a server reads the file identified by this
+path and sends it to the user, the user can access and read the content
+of any (sensitive) file on the host. (<a
+href="https://cwe.mitre.org/data/definitions/22.html">CWE-22</a>)</p>
+<h2 id="how-can-an-attacker-exploit-the-vulnerability">How Can an
+Attacker Exploit the Vulnerability?</h2>
+<p>In a path traversal attack, an attacker aims to access files and
+directories that are stored outside the web root folder or outside the
+intended path. To do this, an attacker manipulates an input value that
+is sent to the server and used by it to generate a path, which the
+server then accesses.</p>
+<p>A common example is when the server provides the ability to download
+files from a directory, e.g., by opening
+<code>www.example.org/download?file=report.pdf</code> in the
+browser:</p>
+<pre class="language-java line-numbers"><code>
+import java.io.*;
+import javax.servlet.*;
+import javax.servlet.http.*;
+import javax.servlet.annotation.*;
+
+@WebServlet("/download")
+public class DownloadServlet extends HttpServlet {
+    private final int ARBITARY_SIZE = 1048;
+
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) 
+        throws ServletException, IOException
+    {
+        String fileName = req.getParameter("file");
+    
+        resp.setContentType("text/plain");
+        resp.setHeader("Content-disposition", "attachment; filename=" + fileName);
+
+        try(InputStream in = req.getServletContext().getRealPath("/").getResourceAsStream(fileName);
+            OutputStream out = resp.getOutputStream()) {
+
+            byte[] buffer = new byte[ARBITARY_SIZE];
+        
+            int numBytesRead;
+            while ((numBytesRead = in.read(buffer)) > 0) {
+                out.write(buffer, 0, numBytesRead);
+            }
+        }
+    }
+}
+</code></pre>
+<p>If the attacker uses the value <code>../report.pdf</code> for the
+<code>file</code> parameter (encoded as <code>%2e%2e%2freport.pdf</code>
+in the URL), the server will try to access a file one level higher than
+originally intended. The attacker is thus able to <strong>download
+arbitrary files from the server</strong>, such as Java files or
+configuration files with database passwords.</p>
+<p>Another example where a path traversal attack can occur is when the
+user uploads a file to a server. If the application uses the file name
+specified by the user/browser to name the file on the server, an
+attacker can manipulate the path here as well. An attacker is then be
+able to <strong>upload the file to another location</strong> and
+possibly overwrite other files such as configuration files or program
+code.</p>
+<h2 id="how-can-you-fix-the-vulnerability">How Can You Fix the
+Vulnerability?</h2>
+<p>The preferred solution is to <strong>not use user input when creating
+file paths</strong>. Instead, the software could use randomly generated
+file names and the user could address these files via an ID that is
+easier to validate. Alternatively, you should consider a white-listing
+approach, where a <strong>set of filenames is defined as valid and
+everything else is considered invalid</strong>. If you are forced to use
+user input for file operations, <strong>validate and normalize the
+input</strong> before using it.</p>
+<p><strong>Warning</strong>: Do not rely on removing <code>../</code> or
+blacklisting certain characters from the user input as there are many
+ways to bypass this kind of protection. For example, if the user input
+is <code>....//file.txt</code> and the software removes the string
+<code>../</code> the resulting string is <code>../file.txt</code>.</p>
+<p>The following example fixes the issue from the previous section by
+using a file ID (that must be an integer) instead of a file name:</p>
+<pre class="language-java line-numbers"><code>
+import java.io.*;
+import javax.servlet.*;
+import javax.servlet.http.*;
+import javax.servlet.annotation.*;
+
+@WebServlet("/download")
+public class DownloadServlet extends HttpServlet {
+    private final int ARBITARY_SIZE = 1048;
+
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) 
+        throws ServletException, IOException
+    {
+        String fileId = request.getParameter("fileId");
+        if (fileId == null or !fileId.matches("\\d+")) {
+            resp.getWriter().print("Please supply a valid filde Id");
+            return;
+        }
+
+        // load the file name, e.g., from a database
+        String fileName = load_file_name_by_id(fileId);
+    
+        resp.setContentType("text/plain");
+        resp.setHeader("Content-disposition", "attachment; filename=" + fileName);
+
+        try(InputStream in = req.getServletContext().getRealPath("/").getResourceAsStream(fileName);
+            OutputStream out = resp.getOutputStream()) {
+
+            byte[] buffer = new byte[ARBITARY_SIZE];
+        
+            int numBytesRead;
+            while ((numBytesRead = in.read(buffer)) > 0) {
+                out.write(buffer, 0, numBytesRead);
+            }
+        }
+    }
+}
+</code></pre>
+</main>
+</body>
+</html>

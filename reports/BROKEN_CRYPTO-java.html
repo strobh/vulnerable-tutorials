@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Use of a Broken or Risky Cryptographic Algorithm</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: 1;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="static/pandoc-theme.css" />
+  <link rel="stylesheet" href="static/prism.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <script src="static/prism.js"></script>
+</head>
+<body>
+<main>
+<header id="title-block-header">
+<h1 class="title">Use of a Broken or Risky Cryptographic Algorithm</h1>
+</header>
+<nav id="toc" role="doc-toc">
+<h2 id="toc-title">Contents</h2>
+<ul>
+<li><a href="#how-can-an-attacker-exploit-the-vulnerability"
+id="toc-how-can-an-attacker-exploit-the-vulnerability">How Can an
+Attacker Exploit the Vulnerability?</a></li>
+<li><a href="#how-can-you-fix-the-vulnerability"
+id="toc-how-can-you-fix-the-vulnerability">How Can You Fix the
+Vulnerability?</a></li>
+</ul>
+</nav>
+<p>The software uses an insecure/broken cryptographic algorithm:
+well-known techniques exist to break the algorithm. An attacker may be
+able to compromise whatever data has been protected/encrypted. (<a
+href="https://cwe.mitre.org/data/definitions/327.html">CWE-327</a>)</p>
+<h2 id="how-can-an-attacker-exploit-the-vulnerability">How Can an
+Attacker Exploit the Vulnerability?</h2>
+<p>If a software uses a cryptography algorithm that is considered
+insecure or broken, this might allow an attacker to <strong>break the
+algorithm and gain access to sensitive information</strong>.</p>
+<p>The following overview offers only a selection of relevant attack
+scenarios against cryptography algorithms and cannot provide detailed
+information about all possible attacks. However, some detailed
+explanations are linked in the list below.</p>
+<h4 id="encryption-algorithms">Encryption algorithms</h4>
+<p>There are several encryption algorithms or encryption modes that are
+considered to be insecure or cryptographically broken.</p>
+<ul>
+<li><code>AES</code> encryption in <code>CBC</code> mode is considered
+insecure under certain conditions. It may be susceptible to <a
+href="https://crypto.stackexchange.com/a/66086">bit-flipping
+attacks</a>, which allow an attacker to manipulate bits of the decrypted
+message in a targeted manner, and <a
+href="https://robertheaton.com/2013/07/29/padding-oracle-attack/">padding
+oracle attacks</a>, which allow an attacker to decrypt the message. In
+general, <code>CBC</code> provides confidentiality, but no authenticity
+or integrity (i.e., an attacker can manipulate the cipher text without
+the receiver noticing it). The widespread consensus, therefore, is that
+the use of <code>CBC</code> without a Message Authentication Code (MAC),
+which provides authenticity and integrity, is undesirable.</li>
+<li>The <code>ECB</code> encryption mode is considered to be insecure,
+regardless of which encryption algorithm (such as <code>AES</code>) is
+used. <a href="https://crypto.stackexchange.com/a/20946">The same block
+of plaintext always yields the same ciphertext</a>. This allows an
+attacker to gain knowledge, e.g., about patterns in the data, or whether
+the same message is sent again or another one.</li>
+<li><code>RSA</code> encryption without a padding has the same problems
+as the <code>ECB</code> mode: The same block of plaintext always yields
+the same ciphertext, thus leaking sensitive information.</li>
+<li><code>RSA</code> encryption with the <code>PKCS#1 v1.5</code>
+padding is considered insecure as it is vulnerable to the <a
+href="https://crypto.stackexchange.com/a/12706">Bleichenbacher’s
+attack</a>. In this attack, the attacker sends a large number of
+ciphertexts to be decrypted which are chosen adaptively. This allows the
+attacker to gradually reveal information about an encrypted message, or
+about the decryption key itself.</li>
+<li>The <code>DES</code> encryption algorithm uses a relatively short
+56-bit key size. <a href="https://crack.sh/">There are systems</a> that
+are able to break a DES key within less than 24 hours by using a
+brute-force attack.</li>
+<li><code>Triple DES</code>/<code>3DES</code>/<code>TDES</code>/<code>TDEA</code>
+is a more secure triple key version of DES. But even though it has a
+larger key size, it is <a
+href="https://csrc.nist.gov/News/2017/Update-to-Current-Use-and-Deprecation-of-TDEA">already
+considered insecure</a> in the face of modern super-computing
+power.</li>
+<li>The <code>RC4</code>/<code>ARC4</code>/<code>ARCFOUR</code>
+encryption algorithm is susceptible to a <a
+href="https://en.wikipedia.org/wiki/RC4#Security">range of attacks</a>
+and is, therefore, also insecure.</li>
+</ul>
+<p>Another common mistake is the incorrect use of encryption
+algorithms:</p>
+<ul>
+<li>If the <code>initialization vector (IV)</code> for the
+<code>CBC</code> encryption mode is always the same instead of randomly
+generated, this might leak sensitive information to an attacker. First,
+the same block of plaintext always yields the same ciphertext. Second,
+if the beginning of two plaintexts are the same and they differ in the
+middle, the attacker can find out at which point they differ and thus
+possibly find out sensitive information as well. Third, if the attacker
+is allowed to encrypt his own plaintexts, he may be able deduce the
+value of low entropy plaintext blocks.</li>
+<li>If the <code>encryption key</code> can be guessed easily, an
+attacker may be able to figure out the key by trying potential
+keys.</li>
+</ul>
+<h4 id="hashmessage-digest-algorithms">Hash/Message digest
+algorithms</h4>
+<p>The hash functions <code>sha1</code> and <code>md5</code> are
+considered cryptographically broken. There are <strong>collision
+attacks</strong> for both of these hash algorithms. This means that an
+attacker is able to find two inputs whose hashes are the same. For
+<code>md5</code>, the attack can find collisions within seconds which
+makes <code>md5</code> completely unsuitable for further use.</p>
+<h2 id="how-can-you-fix-the-vulnerability">How Can You Fix the
+Vulnerability?</h2>
+<p>General consensus is that you should never <a
+href="https://security.stackexchange.com/a/18198">roll your own
+cryptography</a>, instead you should rely on known algorithms that have
+been analyzed by hundreds of experts. Also, you should never implement
+the algorithms yourself, but use well-tested libraries, since it is very
+easy to make mistakes when implementing cryptographic algorithms.</p>
+<p>The following overview offers only a selection of secure algorithms
+and can cover only a small part of potential usage scenarios.</p>
+<h4 id="encryption-algorithms-1">Encryption algorithms</h4>
+<p>It is recommended to use a high-level cryptography library instead of
+using low-level functions. This already relieves the developer of many
+sources of errors, since most libraries have secure default settings.
+Ideally you should, for example, not need to generate encryption keys or
+random nonces/IVs yourself, as critical mistakes can already be made at
+this stage.</p>
+<p>There is a broad consensus to use only encryption algorithms that
+provide message integrity and authenticity. That means, the receiver can
+confirm that the message came from the stated sender (its authenticity)
+and has not been changed (integrity). Examples are <code>AES</code>
+encryption in <code>GCM</code> mode or <code>RSA</code> encryption with
+<code>OAEP</code> padding.</p>
+<p>The most recommended and well-tested library is <a
+href="https://www.bouncycastle.org/documentation.html">Bouncy
+Castle</a>.</p>
+<p>Example: Using the pyca/cryptography library to encrypt and decrypt a
+message</p>
+<pre class="language-java line-numbers"><code>
+import java.security.Security
+import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider
+
+public class Demo {
+    public void static main(String args[])
+    {
+        Security.addProvider(new BouncyCastleFipsProvider());
+
+        // message to encrypt
+        byte[] message = byte[10];
+
+        SecretKey secKey = generateKey();
+        Object[] gcmOutput = gcmEncrypt(secKey, message);
+
+        AlgorithmParameters gcmParameters = (AlgorithmParameters)gcmOutput[0];
+        byte[] ciphertext = (byte[])gcmOutput[1];
+
+        byte[] plaintext = gcmDecrypt(secKey, gcmParameters, ciphertext);
+    }
+
+    public static SecretKey generateKey()
+        throws GeneralSecurityException
+    {
+        KeyGenerator keyGenerator = KeyGenerator.getInstance("AES", "BCFIPS");
+        keyGenerator.init(256);
+        return keyGenerator.generateKey();
+    }
+
+    public static Object[] gcmEncrypt(SecretKey key, byte[] data)
+        throws GeneralSecurityException
+    {
+        final byte[] gcmNonceByte = new byte[12];
+        SecureRandom secureRandomGcm = new SecureRandom();
+        secureRandomGcm.nextBytes(gcmNonceByte);
+
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding", "BCFIPS");
+        cipher.init(Cipher.ENCRYPT_MODE, key, new GCMParameterSpec(128, gcmNonceByte));
+        return new Object[] { cipher.getParameters(), cipher.doFinal(data), };
+    }
+
+    public static byte[] gcmDecrypt(SecretKey key, AlgorithmParameters gcmParameters, byte[] cipherText)
+        throws GeneralSecurityException
+    {
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding", "BCFIPS");
+        cipher.init(Cipher.DECRYPT_MODE, key, gcmParameters);
+        return cipher.doFinal(cipherText);
+    }
+}
+</code></pre>
+<h4 id="hashmessage-digest-algorithms-1">Hash/Message digest
+algorithms</h4>
+<p>The most commonly used cryptographic hash function is
+<code>SHA-256</code>.</p>
+<p>A typical use of hash functions is to perform validation checks,
+i.e., checking whether changes have been made to an object. If you want
+to hash passwords instead, you should use special hash algorithms that
+have been designed exactly for this use case such as <code>bcrypt</code>
+or <code>argon2</code>.</p>
+</main>
+</body>
+</html>

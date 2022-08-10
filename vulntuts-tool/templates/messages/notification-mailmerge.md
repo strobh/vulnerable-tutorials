@@ -1,0 +1,37 @@
+{{contact_author|x|{{has_author|x|Dear {{tutorial_author}}|Hello}}|Hello}},
+
+{{contact_author|x|We are contacting you because you are listed as the author of the programming tutorial at {{tutorial_url}}|We are contacting you because you are listed as the website operator hosting the programming tutorial at {{tutorial_url}}{{has_author|x| written by {{tutorial_author}}}}
+Please forward this message to the author or the person responsible for the website. Thank you for your cooperation.
+
+---}}
+
+We are IT security researchers from the University of Bamberg, Germany. As part of our research, we have studied the prevalence of vulnerabilities in programming tutorials (i.e., how often tutorials contain code snippets that could be hacked by attackers). For reasons of research ethics, we would like to inform you that your tutorial contains code that is susceptible to the following security {{count_vulnerabilities|1|vulnerability|vulnerabilities}}:
+
+{{vuln_summaries}}
+
+Please consider fixing the {{count_vulnerabilities|1|vulnerability|vulnerabilities}} in your tutorial.
+
+
+How {{count_vulnerabilities|1|does the vulnerability|do the vulnerabilities}} work?
+
+{{support_explanation_or_individual|x|We have provided a detailed and illustrated explanation of the {{count_vulnerabilities|1|vulnerability|vulnerabilities}} with the vulnerable code from your tutorial at the following private URL: {{report_url}}
+The report also contains an explanation of how to fix the {{count_vulnerabilities|1|vulnerability|vulnerabilities}}. The vulnerable code is not included in this email to prevent this email from being rejected by spam filters.|We have provided a short explanation of the {{count_vulnerabilities|1|vulnerability|vulnerabilities}} with the vulnerable code from your tutorial at the following private URL: {{report_url}}
+The vulnerable code is not included in this email to prevent this email from being rejected by spam filters.}}
+Only people who know the URL have access to the report. It is not publicly available and we have not shared and will not share the URL with anyone else.
+
+
+{{support_reason|x|Why should you fix the {{count_vulnerabilities|1|vulnerability|vulnerabilities}}??
+
+Beginners who learn to program with tutorials containing vulnerable code are generally not aware of security issues. They may write and publish software that is susceptible to various attacks. Even advanced and professional programmers often copy vulnerable code from tutorials into their software projects. Studies have shown that up to 15% of all Android apps contain code snippets with security vulnerabilities that were copied from StackOverflow (https://arxiv.org/pdf/1710.03135.pdf). Therefore, it is critical that programmers are educated about the security aspects of programming and that tutorials do not contain vulnerable code.
+
+
+}}Please note that, as a public university, we are not interested in and cannot accept financial benefits for this notification. Also, we will not disclose the above-mentioned {{count_vulnerabilities|1|vulnerability|vulnerabilities}} publicly. This message is intended exclusively for you personally to inform you about the security {{count_vulnerabilities|1|vulnerability|vulnerabilities}}.
+
+{{support_explanation_or_individual|x|Should you need further information or have any other questions or feedback, please do not hesitate to respond to this email.|Should you have any feedback, please do not hesitate to respond to this email.}}
+
+Best regards,
+Tobias Heckel, Master's student at University of Bamberg
+-- 
+Privacy and Security in Information Systems Group
+https://www.uni-bamberg.de/en/psi/
+University of Bamberg, Germany

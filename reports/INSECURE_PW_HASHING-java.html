@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Insecure Password Hashing</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: 1;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="static/pandoc-theme.css" />
+  <link rel="stylesheet" href="static/prism.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <script src="static/prism.js"></script>
+</head>
+<body>
+<main>
+<header id="title-block-header">
+<h1 class="title">Insecure Password Hashing</h1>
+</header>
+<nav id="toc" role="doc-toc">
+<h2 id="toc-title">Contents</h2>
+<ul>
+<li><a href="#how-can-an-attacker-exploit-the-vulnerability"
+id="toc-how-can-an-attacker-exploit-the-vulnerability">How Can an
+Attacker Exploit the Vulnerability?</a></li>
+<li><a href="#how-can-you-fix-the-vulnerability"
+id="toc-how-can-you-fix-the-vulnerability">How Can You Fix the
+Vulnerability?</a></li>
+</ul>
+</nav>
+<p>The software generates a hash for a password using a hashing scheme
+that does not provide a sufficient level of computational effort. This
+makes it easier for an attacker to crack the password, e.g., by
+performing a brute-force attack. (<a
+href="https://cwe.mitre.org/data/definitions/916.html">CWE-916</a>)</p>
+<h2 id="how-can-an-attacker-exploit-the-vulnerability">How Can an
+Attacker Exploit the Vulnerability?</h2>
+<p>If a software stores password hashes, there is a risk that an
+attacker can gain access to them. This may be an employee or developer
+who has access to the database and thus to all usernames and password
+hashes. However, it may also be an external attacker who has gained
+access to the database by hacking into the system.</p>
+<p>An attacker who has gained access to the list of password hashes
+typically uses a <strong>brute-force attack</strong> to crack the
+password hashes. The attacker generates billions of possible passwords,
+calculates the hash of them, and hopes that he finds the correct hash
+(and thus the corresponding password). If the software uses a fast hash
+function (such as <code>md5</code> or <code>sha256</code>) for the
+passwords, the hashes can be calculated very efficiently: Modern GPUs
+can calculate more than a million hashes per second. So an attacker can
+try through many passwords very quickly and may be able to <strong>find
+a password for the corresponding hash after only a few
+seconds</strong>.</p>
+<p>This is simplified by the fact that many users have bad passwords
+that can be found in lists of common passwords (e.g., from previous
+password breaches on other platforms). Thus, an attacker first
+calculates the hashes of known passwords in his brute-force attack.
+These bad passwords are, therefore, cracked very quickly.</p>
+<p>Example: The attacker tries to guess the password for the hash
+<code>482c811da5d5b4bc6d497ffa98491e38</code> and tries common passwords
+first:</p>
+<pre><code>admin        ---&gt;  21232f297a57a5a743894a0e4a801fc3 (not correct)
+test123      ---&gt;  cc03e747a6afbbcbf8be7668acfebee5 (not correct)
+password123  ---&gt;  482c811da5d5b4bc6d497ffa98491e38 (correct password was found)</code></pre>
+<p>The next problem is that all users who have the same password also
+have the same password hash. If an attacker finds the password to a
+hash, he <strong>knows the password for all users with this password
+hash</strong>.</p>
+<p>To prevent this, the hashing algorithm must be used in a way such
+that different users who have the same password do not get the same
+hash. For this purpose, a random string (called <code>salt</code>) that
+is different for each user is added to the password before it is hashed
+(see next section on how to fix the vulnerability).</p>
+<p>If the attacker managed to find out some passwords, he can then use
+the list of passwords in various ways. First, the attacker can
+<strong>log in to the software as the corresponding user</strong> and
+thus cause damage or access the user’s personal data. Second, since many
+users use the same password across multiple services, the attacker may
+also <strong>gain access to the user’s accounts on other
+websites</strong>. Third, the attacker can <strong>sell or publish the
+list of usernames/emails and passwords</strong>, allowing others to gain
+access to the accounts.</p>
+<h2 id="how-can-you-fix-the-vulnerability">How Can You Fix the
+Vulnerability?</h2>
+<p>The objective is to prevent an attacker who has gained access to the
+stored password hashes from being able to crack them (i.e., to find out
+the corresponding passwords).</p>
+<p>To prevent the efficient calculation of password hashes (brute-force
+attack), you should only use <strong>hash functions designed for hashing
+passwords, such as </strong>PBKDF2, bcrypt, or argon2<strong>. The
+calculation of these hash algorithms requires a certain amount of
+computational effort, which </strong>slows down the calculation
+considerably** (e.g., to only 5 password hashes per second) and makes it
+harder to try billions of passwords:</p>
+<pre class="language-java line-numbers"><code>
+// REGISTRATION: when the user creates an account
+// ------------
+
+// password entered by the user
+String password = "...";
+
+// generate salt
+SecureRandom random = new SecureRandom();
+byte[] salt = new byte[16];
+random.nextBytes(salt);
+
+// hash the password using PBKDF2 algorithm and store it in the database
+KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, 65536, 24 * 8);
+SecretKeyFactory f = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+byte[] hash = f.generateSecret(spec).getEncoded();
+Base64.Encoder encoder = Base64.getEncoder();
+String pw_salt = enc.encodeToString(salt);
+String pw_hash = enc.encodeToString(hash);
+
+
+
+// LOGIN: when the user logs in
+// ------------
+
+// password entered by the user
+String password = "...";
+
+// load password hash from the database
+String pw_hash = load_pw_from_database();
+String pw_salt = load_salt_from_database();
+byte[] hash = Base64.getUrlDecoder().decode(pw_hash);
+byte[] salt = Base64.getUrlDecoder().decode(pw_salt);
+
+// calculate the hash of the password
+KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, 65536, 24 * 8);
+SecretKeyFactory f = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+byte[] check_hash = f.generateSecret(spec).getEncoded();
+
+// verify that the correct password was entered
+int zero = 0;
+for (int idx = 0; idx < check_hash.length; ++idx) {
+    zero |= hash[salt.length + idx] ^ check_hash[idx];
+}
+
+if (zero == 0) {
+    System.out.println("correct password");
+}
+else {
+    System.out.println("incorrect password");
+}
+</code></pre>
+<p>To prevent that all users who have the same password also have the
+same password hash, the code snippet above <strong>generates a random
+string</strong> (called <code>salt</code>) using
+<code>random.nextBytes()</code>. This salt is <strong>hashed together
+with the password</strong> and is different for each user.</p>
+<p>Example: Password hashes with salt (using the <code>bcrypt</code>
+hash function)</p>
+<pre><code>password123 + ddsYzDfKAH4F9fOYVh9Mve  ---&gt;  AVAlfghXiTW59Vbt74cpS.AMn.i5rte
+password123 + 0Vl2RYbcb764tDaf44M2lO  ---&gt;  6aSZIA0a7mTrKunoYkAXEH/CGNKBbMa</code></pre>
+<p>The same password (<code>password123</code>), but with different
+salts (<code>ddsYzDfKAH4F9fOYVh9Mve</code> and
+<code>0Vl2RYbcb764tDaf44M2lO</code>), results in different hashes. The
+advantage is that an attacker can no longer try to calculate hashes for
+all users at the same time. Instead, the attacker has to try passwords
+for each salt (and thus each user) individually. For example,
+<code>password123+saltA</code> and <code>test123+saltA</code> for user A
+and <code>password123+saltB</code> and <code>test123+saltB</code> for
+user B. This <strong>slows down the attacker even more and makes it
+practically impossible to find out the passwords for all
+users</strong>.</p>
+<p><em>Note</em>: The salt must be stored in the database for each user
+to be able to calculate the hash again later (e.g. when the user logs
+in).</p>
+</main>
+</body>
+</html>

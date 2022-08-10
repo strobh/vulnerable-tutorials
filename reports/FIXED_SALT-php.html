@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Insecure Password Hashing (Predictable/Fixed Salt)</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: 1;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="static/pandoc-theme.css" />
+  <link rel="stylesheet" href="static/prism.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <script src="static/prism.js"></script>
+</head>
+<body>
+<main>
+<header id="title-block-header">
+<h1 class="title">Insecure Password Hashing (Predictable/Fixed
+Salt)</h1>
+</header>
+<nav id="toc" role="doc-toc">
+<h2 id="toc-title">Contents</h2>
+<ul>
+<li><a href="#how-can-an-attacker-exploit-the-vulnerability"
+id="toc-how-can-an-attacker-exploit-the-vulnerability">How Can an
+Attacker Exploit the Vulnerability?</a></li>
+<li><a href="#how-can-you-fix-the-vulnerability"
+id="toc-how-can-you-fix-the-vulnerability">How Can You Fix the
+Vulnerability?</a></li>
+</ul>
+</nav>
+<p>The software generates a hash for a password that should not be
+reversible, but the software uses a predictable salt as part of the
+input. This makes it easier for an attacker to crack the password, e.g.,
+by performing a brute-force attack. (<a
+href="https://cwe.mitre.org/data/definitions/760.html">CWE-760</a>)</p>
+<h2 id="how-can-an-attacker-exploit-the-vulnerability">How Can an
+Attacker Exploit the Vulnerability?</h2>
+<p>If a software stores password hashes, there is a risk that an
+attacker can gain access to them. This may be an employee or developer
+who has access to the database and thus to all usernames and password
+hashes. However, it may also be an external attacker who has gained
+access to the database by hacking into the system.</p>
+<p>An attacker who has gained access to the list of password hashes
+typically uses a <strong>brute-force attack</strong> to crack the
+password hashes. The attacker generates millions of possible passwords,
+calculates the hashes of them, and hopes that he finds the correct hash
+(and thus the corresponding password). This is simplified by the fact
+that many users have bad passwords that can be found in lists of common
+passwords (e.g., from previous password breaches on other platforms).
+Thus, an attacker first calculates the hashes of known passwords in his
+brute-force attack. These bad passwords are, therefore, cracked very
+quickly.</p>
+<p>Another problem is that all users who have the same password also
+have the same password hash. If an attacker finds the password to a
+hash, he <strong>knows the password for all users with this password
+hash</strong>. Salts are hashed together with the password to prevent
+this. However, if the same static salt is used for every user, the same
+password results in the same password hash again. Thus, the attacker can
+calculate hashes and guess passwords for all users at the same time.
+<strong>Using a static instead of a random salt reduces the amount of
+effort an attacker must spend to crack the password hashes
+considerably.</strong></p>
+<p>Example: The attacker tries to guess the password for the hash
+<code>ed35b25ffc18b8960553f7d846f0fb90</code> with the static salt
+<code>staticsalt</code> and tries common passwords first:</p>
+<pre><code>admin       + staticsalt  ---&gt;  8b35ab95c9228d169430b1d8e8ae6b2b (not correct)
+test123     + staticsalt  ---&gt;  dfd74a1e785b06658475108c20708f00 (not correct)
+password123 + staticsalt  ---&gt;  ed35b25ffc18b8960553f7d846f0fb90 (correct password found)</code></pre>
+<p>To prevent this, the hashing algorithm must be used in a way such
+that <strong>different users who have the same password do not get the
+same hash</strong>. For this purpose, a <strong>random</strong> string
+(called <code>salt</code>) that is different for each user is added to
+the password before it is hashed (see next section on how to fix the
+vulnerability).</p>
+<p>If the attacker managed to find out some passwords, he can then use
+the list of passwords in various ways. First, the attacker can
+<strong>log in to the software as the corresponding user</strong> and
+thus cause damage or access the user’s personal data. Second, since many
+users use the same password across multiple services, the attacker may
+also <strong>gain access to the user’s accounts on other
+websites</strong>. Third, the attacker can <strong>sell or publish the
+list of usernames/emails and passwords</strong>, allowing others to gain
+access to the accounts.</p>
+<h2 id="how-can-you-fix-the-vulnerability">How Can You Fix the
+Vulnerability?</h2>
+<p>The objective is to prevent an attacker who has gained access to the
+stored password hashes from being able to crack them (i.e., to find out
+the corresponding passwords).</p>
+<pre class="language-php line-numbers"><code>
+// REGISTRATION: when the user creates an account
+// ------------
+
+// password entered by the user
+$password = $_POST["password"];
+
+// hash the password using bcrypt algorithm and store it in the database
+$pw_hash = password_hash($password, PASSWORD_DEFAULT);
+
+
+
+// LOGIN: when the user logs in
+// ------------
+
+// password entered by the user
+$password = $_POST["password"];
+
+// load password hash from the database
+$pw_hash = load_pw_from_database();
+
+// verify that the correct password was entered
+if (password_verify($password, $pw_hash)) {
+    echo "correct password";
+}
+else {
+    echo "incorrect password"
+}
+</code></pre>
+<p>To prevent that all users who have the same password also have the
+same password hash, the code snippet above <strong>generates a random
+string</strong> (called <code>salt</code>) in
+<code>password_hash()</code>. <strong>This salt is hashed together with
+the password and is different for each user</strong>.</p>
+<p>Example: Password hashes with salt (using the <code>bcrypt</code>
+hash function)</p>
+<pre><code>password123 + ddsYzDfKAH4F9fOYVh9Mve  ---&gt;  AVAlfghXiTW59Vbt74cpS.AMn.i5rte
+password123 + 0Vl2RYbcb764tDaf44M2lO  ---&gt;  6aSZIA0a7mTrKunoYkAXEH/CGNKBbMa</code></pre>
+<p>The same password (<code>password123</code>), but with different
+salts (<code>ddsYzDfKAH4F9fOYVh9Mve</code> and
+<code>0Vl2RYbcb764tDaf44M2lO</code>), results in different hashes. The
+advantage is that an attacker can no longer try to calculate hashes for
+all users at the same time. Instead, the attacker has to try passwords
+for each salt (and thus each user) individually. For example,
+<code>password123 + ddsYzDfKAH4F9fOYVh9Mve</code> and
+<code>test123 + ddsYzDfKAH4F9fOYVh9Mve</code> for user A and
+<code>password123 + 0Vl2RYbcb764tDaf44M2lO</code> and
+<code>test123 + 0Vl2RYbcb764tDaf44M2lO</code> for user B. This
+<strong>slows down the attacker and makes it practically impossible to
+find out the passwords for all users</strong>.</p>
+<p><em>Note</em>: The salt must be stored in the database for each user
+to be able to calculate the hash again later (e.g. when the user logs
+in). If you use <code>password_hash()</code> the salt is included in the
+password hash and you do not have to store it manually.</p>
+</main>
+</body>
+</html>

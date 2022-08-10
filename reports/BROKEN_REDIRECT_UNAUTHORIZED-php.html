@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Improper Access Control (Broken Redirect)</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: 1;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="static/pandoc-theme.css" />
+  <link rel="stylesheet" href="static/prism.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <script src="static/prism.js"></script>
+</head>
+<body>
+<main>
+<header id="title-block-header">
+<h1 class="title">Improper Access Control (Broken Redirect)</h1>
+</header>
+<nav id="toc" role="doc-toc">
+<h2 id="toc-title">Contents</h2>
+<ul>
+<li><a href="#how-can-an-attacker-exploit-the-vulnerability"
+id="toc-how-can-an-attacker-exploit-the-vulnerability">How Can an
+Attacker Exploit the Vulnerability?</a></li>
+<li><a href="#how-can-you-fix-the-vulnerability"
+id="toc-how-can-you-fix-the-vulnerability">How Can You Fix the
+Vulnerability?</a></li>
+</ul>
+</nav>
+<p>Unauthorized users can access a resource/page or perform actions they
+should not be allowed to access or perform. For example, a user can view
+the administration interface without logging in or view other areas that
+only logged-in users should be able to see. This is caused by the fact
+that a user who is not logged in is redirected to another page, e.g.,
+the login page. To redirect the user, a <code>Location</code> header is
+sent. However, the content of the page that should be sent only to
+logged-in users is also sent in the response and can be viewed by an
+attacker. (<a
+href="https://cwe.mitre.org/data/definitions/284.html">CWE-284</a>)</p>
+<h2 id="how-can-an-attacker-exploit-the-vulnerability">How Can an
+Attacker Exploit the Vulnerability?</h2>
+<p>Let’s assume a website has an administration interface that is
+accessible at <code>https://www.example.com/admin.php</code>.</p>
+<p>The code in <code>admin.php</code> checks if the user is logged in.
+If this is not the case, the user will be redirected to the login page.
+This is accomplished by sending the HTTP header <code>Location</code>
+that signals the browser to load another page.</p>
+<pre class="language-php line-numbers"><code>
+&lt;?php
+// if the user is not logged in
+if (!isset($_SESSION['user_id'])) {
+    // redirect user to http://www.example.com/login.php
+    header("Location: http://www.example.com/login.php");
+}
+
+// remaining code of the page
+foobar();
+?>
+
+Some text that should only be sent to users who are logged in.
+</code></pre>
+<p>After sending the <code>Location</code> header, however, the rest of
+the code would still be executed (<code>foobar();</code>) and the page
+content is also sent to the browser
+(<code>Some text that should only be sent to users who are logged in.</code>).
+The user usually does not notice this, because the browser immediately
+loads the login page. However, an attacker receives the content from the
+server and can view it without any problems.</p>
+<p>As a result, the attacker can <strong>obtain sensitive
+information</strong> that only logged-in users or an administrator
+should be able to see. Also, the attacker may be able to <strong>perform
+functions</strong> that only an administrator should be able to perform
+(<code>foobar();</code>).</p>
+<h2 id="how-can-you-fix-the-vulnerability">How Can You Fix the
+Vulnerability?</h2>
+<p>The issue can be fixed by stopping the execution of the remaining PHP
+script with <code>exit;</code> after sending the <code>Location</code>
+header. This also stops any further content from being sent to the
+browser.</p>
+<pre class="language-php line-numbers" data-line="8"><code>
+&lt;?php
+// if the user is not logged in
+if (!isset($_SESSION['user_id'])) {
+    // redirect user to http://www.example.com/login.php
+    header("Location: http://www.example.com/login.php");
+    
+    // very important! stop executing the code below
+    exit;
+}
+
+// remaining code of the page
+foobar(); // this code is not executed if the user is not logged in
+?>
+
+Some text that should only be sent to users who are logged in.
+</code></pre>
+</main>
+</body>
+</html>

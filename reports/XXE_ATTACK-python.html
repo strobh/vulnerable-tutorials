@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Improper Restriction of XML External Entity Reference</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: 1;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="static/pandoc-theme.css" />
+  <link rel="stylesheet" href="static/prism.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <script src="static/prism.js"></script>
+</head>
+<body>
+<main>
+<header id="title-block-header">
+<h1 class="title">Improper Restriction of XML External Entity
+Reference</h1>
+</header>
+<nav id="toc" role="doc-toc">
+<h2 id="toc-title">Contents</h2>
+<ul>
+<li><a href="#how-can-an-attacker-exploit-the-vulnerability"
+id="toc-how-can-an-attacker-exploit-the-vulnerability">How Can an
+Attacker Exploit the Vulnerability?</a></li>
+<li><a href="#how-can-you-fix-the-vulnerability"
+id="toc-how-can-you-fix-the-vulnerability">How Can You Fix the
+Vulnerability?</a></li>
+</ul>
+</nav>
+<p>The software processes an XML document that can contain XML entities
+with URIs that resolve to external documents, causing the product to
+embed incorrect documents into its output. This allows an attacker to
+access/read the content of any (sensitive) file on the host or to
+perform a server-side request forgery (SSRF) attack. (<a
+href="https://cwe.mitre.org/data/definitions/611.html">CWE-611</a>)</p>
+<h2 id="how-can-an-attacker-exploit-the-vulnerability">How Can an
+Attacker Exploit the Vulnerability?</h2>
+<p>An XML external entity attack (also known as XXE attack) is an attack
+against an application that parses XML data. This attack occurs when XML
+data containing a reference to an external entity is processed by a
+weakly configured XML parser.</p>
+<p>The XML standard defines entities as a way of representing an item of
+data within an XML document, instead of using the data itself. For
+example, the <code>&amp;lt;</code> entity in HTML represents the
+<code>&lt;</code> character. An external entity is a local or remote
+resource/file that is referenced by a URI. Thus, if an XML parser wants
+to determine the value of the external entity, namely the content of the
+resource, the parser must load the resource.</p>
+<p>The most basic attack is to use an XXE attack to retrieve the content
+of files on the server. Let’s assume, an application expects the
+following XML file and outputs the value of <code>productId</code> on a
+web page.</p>
+<pre class="language-markup line-numbers"><code>
+&lt;?xml version="1.0" encoding="UTF-8"?>
+&lt;productId>381&lt;/productId>
+</code></pre>
+<p>An attacker can manipulate the XML document such that it contains a
+malicous external entity that refers to the file
+<code>/etc/passwd</code>:</p>
+<pre class="language-markup line-numbers" data-line="3"><code>
+&lt;?xml version="1.0" encoding="UTF-8"?>
+&lt;!DOCTYPE foo [ &lt;!ENTITY xxe SYSTEM "file:///etc/passwd"> ]>
+&lt;productId>&xxe;&lt;/productId>
+</code></pre>
+<p>When the parser parses the XML file and encounters the external
+entity, it determines the value of the entity by loading the content of
+the file <code>/etc/passwd</code> and includes the content of the file
+at the corresponding position. In other words, the
+<code>&amp;xxe;</code> entity is replaced by the contents of the file
+<code>/etc/passwd</code>. The parsed XML file could look like this:</p>
+<pre class="language-markup line-numbers" data-line="3-5"><code>
+&lt;?xml version="1.0" encoding="UTF-8"?>
+&lt;!DOCTYPE foo [ &lt;!ENTITY xxe SYSTEM "file:///etc/passwd"> ]>
+&lt;productId>root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin&lt;/productId>
+</code></pre>
+<p>If the web application then outputs the contents of
+<code>productId</code> on a web page, the attacker can indirectly
+<strong>retrieve the content of the file on the server</strong>.</p>
+<p>Another attack scenario is that the external entity refers to a URL
+(e.g., <code>localhost:8080/deleteDB</code>) that is then requested by
+the XML parser. As the XML parser is located on the server, the attacker
+may be able to <strong>make requests to an unintended location like an
+internal system</strong>. This is kind of attack is known as a
+server-side request forgery (also known as SSRF).</p>
+<p>The following XML parser is vulnerable to XXE attacks by default:</p>
+<pre class="language-python line-numbers"><code>
+parser = etree.XMLParser() # by default resolve_entities is set to true
+parser = etree.XMLParser(resolve_entities=True)
+</code></pre>
+<h2 id="how-can-you-fix-the-vulnerability">How Can You Fix the
+Vulnerability?</h2>
+<p>The vulnerability can be fixed by configuring the XML parser such
+that it <strong>does not resolve external entities</strong>.</p>
+<p>This can be achieved by one of the following ways:</p>
+<ul>
+<li>If DOCTYPE is not necessary, completely disable all DOCTYPE
+declarations.</li>
+<li>If external entities are not necessary, completely disable their
+declarations.</li>
+<li>If external entities are necessary then:
+<ul>
+<li>Use XML processor features, if available, to authorize only required
+protocols (eg: https).</li>
+<li>And use an entity resolver (and optionally an XML Catalog) to
+resolve only trusted entities.</li>
+</ul></li>
+</ul>
+<p>To configure the XML parsers named in the previous section
+accordingly (see <a
+href="https://rules.sonarsource.com/python/RSPEC-2755">SonarRules</a>
+for the source of this fix):</p>
+<pre class="language-python line-numbers"><code>
+parser = etree.XMLParser(resolve_entities=False, no_network=True)
+</code></pre>
+</main>
+</body>
+</html>

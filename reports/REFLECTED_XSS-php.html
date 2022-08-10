@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Reflected Cross-site Scripting (XSS)</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: 1;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="static/pandoc-theme.css" />
+  <link rel="stylesheet" href="static/prism.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <script src="static/prism.js"></script>
+</head>
+<body>
+<main>
+<header id="title-block-header">
+<h1 class="title">Reflected Cross-site Scripting (XSS)</h1>
+</header>
+<nav id="toc" role="doc-toc">
+<h2 id="toc-title">Contents</h2>
+<ul>
+<li><a href="#how-can-an-attacker-exploit-the-vulnerability"
+id="toc-how-can-an-attacker-exploit-the-vulnerability">How Can an
+Attacker Exploit the Vulnerability?</a></li>
+<li><a href="#how-can-you-fix-the-vulnerability"
+id="toc-how-can-you-fix-the-vulnerability">How Can You Fix the
+Vulnerability?</a></li>
+</ul>
+</nav>
+<p>The software prints user input on a web page that is served to other
+users without neutralizing special characters. This allows an attacker
+to inject client-side scripts that are executed on the other user’s
+device. The attacker can perform a variety of malicious activities such
+as obtaining session information to log in as the attacked user or
+sending malicious requests to a website on behalf of the victim. In a
+reflected cross-site-scripting attack, the server reads the user input
+directly from the HTTP request, e.g., a GET parameter. (<a
+href="https://cwe.mitre.org/data/definitions/79.html">CWE-79</a>)</p>
+<h2 id="how-can-an-attacker-exploit-the-vulnerability">How Can an
+Attacker Exploit the Vulnerability?</h2>
+<p>Cross-Site Scripting (XSS) occurs when a web application accepts data
+from untrusted sources (e.g., user input from a form) and then sends
+this data to a browser without checking the content. More precisely, the
+untrusted data is printed as part of the page content when the page is
+accessed by a user. This allows an attacker to inject JavaScript code
+into a page that is indirectly sent to the browser of all users when
+they visit the page. The malicious code is then executed in the client’s
+browser.</p>
+<p><strong>Reflected Cross-Site Scripting</strong> is a subcategory of
+XSS where the user input is sent to the server (mostly as GET parameter)
+and directly included in the answer of the request. The data is not
+stored by the server (e.g., in a database). An attacker must, therefore,
+somehow get a user to visit a web page with manipulated parameters. For
+example, a website controlled by the attacker could redirect to a
+manipulated URL, or an email could contain a manipulated link.</p>
+<p>Example: A website that displays a message to the user that is sent
+as GET parameter in the URL</p>
+<pre class="language-php line-numbers"><code>
+echo "&lt;p>" . $_GET["message"] . "&lt;/p>";
+</code></pre>
+<p>Let’s assume a user manipulates the URL parameter
+<code>message</code> to look like this:</p>
+<pre class="language-html line-numbers"><code>
+Some message!&lt;script>alert("Malicious code");&lt;/script>
+</code></pre>
+<p>The resulting HTML of the web page would look like this:</p>
+<pre class="language-html line-numbers"><code>
+&lt;p>Some message!&lt;script>alert("Malicious code");&lt;/script>&lt;/p>
+</code></pre>
+<p>The script tag is printed as it was entered by the user and,
+therefore, also recognized as HTML and executed by the browser.</p>
+<p>The injected malicious code may, for example,</p>
+<ul>
+<li>access the browser’s session cookies for the website, allowing the
+attacker to <strong>log in as the user</strong>,</li>
+<li>record user input (keylogger), allowing the attacker to <strong>find
+out passwords, credit card numbers, or addresses</strong>,</li>
+<li><strong>change the web page as desired</strong> (e.g., redirecting
+payments in a shop to the attacker),</li>
+<li>or use the computing power of the browser to <strong>mine
+bitcoins</strong> or other cryptocurrencies.</li>
+</ul>
+<h2 id="how-can-you-fix-the-vulnerability">How Can You Fix the
+Vulnerability?</h2>
+<p>The function <code>htmlspecialchars</code> converts any HTML special
+characters into their HTML encodings, meaning they will then
+<em>not</em> be processed as standard HTML.</p>
+<p>As a general rule, you should <strong>never trust input coming from a
+client</strong>. Every GET or POST parameter and cookie value should
+therefore be validated. Therefore, it is best practice to <strong>always
+escape any output</strong> so they will not be evaluated in an
+unexpected way.</p>
+<p>To fix the example from the previous section:</p>
+<pre class="language-php line-numbers"><code>
+echo "&lt;p>" . htmlspecialchars($_GET["message"]) . "&lt;/p>";
+</code></pre>
+<p>The resulting HTML of the web page would then look like this:</p>
+<pre class="language-html line-numbers"><code>
+&lt;p>Some message!&amp;lt;script&amp;gt;alert(&amp;quot;Malicious code&amp;quot;);&amp;lt;/script&amp;gt;&lt;/p>
+</code></pre>
+<p>And would be displayed in the browser like this:</p>
+<pre class="language-html line-numbers"><code>
+Some message!&lt;script&gt;alert(&quot;Malicious code&quot;);&lt;/script&gt;
+</code></pre>
+<p>The script tag will not be interpreted as a JavaScript tag by the
+browser, but instead as simple text.</p>
+</main>
+</body>
+</html>

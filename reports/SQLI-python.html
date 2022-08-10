@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>SQL Injection</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: 1;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="static/pandoc-theme.css" />
+  <link rel="stylesheet" href="static/prism.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <script src="static/prism.js"></script>
+</head>
+<body>
+<main>
+<header id="title-block-header">
+<h1 class="title">SQL Injection</h1>
+</header>
+<nav id="toc" role="doc-toc">
+<h2 id="toc-title">Contents</h2>
+<ul>
+<li><a href="#how-can-an-attacker-exploit-the-vulnerability"
+id="toc-how-can-an-attacker-exploit-the-vulnerability">How Can an
+Attacker Exploit the Vulnerability?</a></li>
+<li><a href="#how-can-you-fix-the-vulnerability"
+id="toc-how-can-you-fix-the-vulnerability">How Can You Fix the
+Vulnerability?</a></li>
+</ul>
+</nav>
+<p>In an SQL injection attack, an attacker modifies an SQL query that is
+executed by a database. The application constructs the SQL query using
+user input, e.g., from an input field on the website, without
+neutralizing special characters that modify the query. When the
+malicious statement is successfully executed, the attacker can read
+sensitive data from the database, modify data, or might even be able to
+delete the complete database. (<a
+href="https://cwe.mitre.org/data/definitions/89.html">CWE-89</a>)</p>
+<h2 id="how-can-an-attacker-exploit-the-vulnerability">How Can an
+Attacker Exploit the Vulnerability?</h2>
+<div class="warning">
+<p>Warning: The code in this example is insecure because the password is
+stored in clear text (i.e., the password is not hashed and no random
+salt is used). This example is only to illustrate SQL injections and
+should not be used for a login page.</p>
+</div>
+<p>Let’s assume a website has a login page where a user enters a
+username and a password. The server then checks if the password is
+correct and logs the user in:</p>
+<pre class="language-python line-numbers" data-line="17"><code>
+import mysql.connector
+
+# connect to database
+connection = mysql.connector.connect(
+    host='localhost',
+    database='db_name',
+    user='db_user',
+    password='db_password'
+)
+cursor = connection.cursor()
+
+# username and password entered by the user
+username = "foo"
+password = "bar"
+
+# username and password are concatenated into the query
+query = "SELECT * FROM users WHERE name = '" + username + "' AND password = '" + password + "'"
+cursor.execute(query)
+result = cursor.fetchone()
+
+if result is None:
+    print("wrong username or password")
+else:
+    print("successfully logged in")
+
+cursor.close()
+connection.close()
+</code></pre>
+<p>If the user enters <code>foo</code> as username and <code>bar</code>
+as password, the resulting query is:</p>
+<pre class="language-sql line-numbers"><code>
+SELECT * FROM users WHERE name = 'foo' AND password = 'bar'
+</code></pre>
+<p>Let’s assume an attacker enters the string “<code>admin' --</code>”
+as username and <code>bar</code> as password. The resulting query
+is:</p>
+<pre class="language-sql line-numbers"><code>
+SELECT * FROM users WHERE name = 'admin' --' AND password = 'bar'
+</code></pre>
+<p>The apostrophe (<code>'</code>) in the username closes the string in
+the SQL query that was started at <code>WHERE name = '</code>. The rest
+of the username string (<code>--</code>) breaks out of the string value
+and changes the query itself. The two dashes (<code>--</code>) then
+signal the start of a comment in SQL. As a result, the remaining part of
+the query is ignored:</p>
+<pre class="language-sql line-numbers"><code>
+SELECT * FROM users WHERE name = 'admin'
+</code></pre>
+<p>As you can see, the database would return the row containing the
+information about the user <code>admin</code> without checking whether
+the password is correct. The attacker would then be logged in as the
+user <code>admin</code>. If this is the administrator of the website,
+the attacker could take over the website.</p>
+<p>To sum up, the issue in the code example is that an attacker is able
+to manipulate the query with his input.</p>
+<p>SQL injections can also be used to <strong>read data from other
+tables, modify data, or delete data</strong>.</p>
+<h2 id="how-can-you-fix-the-vulnerability">How Can You Fix the
+Vulnerability?</h2>
+<p>The most secure and modern approach is to use <strong>prepared
+statements</strong>.</p>
+<pre class="language-python line-numbers" data-line="17-19"><code>
+import mysql.connector
+
+# connect to database
+connection = mysql.connector.connect(
+    host='localhost',
+    database='db_name',
+    user='db_user',
+    password='db_password'
+)
+cursor = connection.cursor(prepared=True)
+
+# username and password entered by the user
+username = "foo"
+password = "bar"
+
+# username and password are supplied separately to the prepared statement
+query = "SELECT * FROM users WHERE name = %s AND password = %s"
+params = (username, password)
+cursor.execute(query, params)
+result = cursor.fetchone()
+
+if result == None:
+    print("wrong username or password")
+else:
+    print("successfully logged in")
+
+cursor.close()
+connection.close()
+</code></pre>
+<p>Prepared statements make a strict distinction between the query and
+the data to be used in the query. In the query, <code>%s</code> marks
+where the data should be inserted later. Afterwards, we supply the
+values as second parameter (as tuple) to the method
+<code>cursor.execute()</code>. The database takes care that the data is
+always interpreted as data only. Manipulation of the query is thus no
+longer possible.</p>
+</main>
+</body>
+</html>

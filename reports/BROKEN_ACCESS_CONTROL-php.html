@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Broken Access Control</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: 1;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="static/pandoc-theme.css" />
+  <link rel="stylesheet" href="static/prism.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <script src="static/prism.js"></script>
+</head>
+<body>
+<main>
+<header id="title-block-header">
+<h1 class="title">Broken Access Control</h1>
+</header>
+<nav id="toc" role="doc-toc">
+<h2 id="toc-title">Contents</h2>
+<ul>
+<li><a href="#how-can-an-attacker-exploit-the-vulnerability"
+id="toc-how-can-an-attacker-exploit-the-vulnerability">How Can an
+Attacker Exploit the Vulnerability?</a></li>
+<li><a href="#how-can-you-fix-the-vulnerability"
+id="toc-how-can-you-fix-the-vulnerability">How Can You Fix the
+Vulnerability?</a></li>
+</ul>
+</nav>
+<p>Unauthorized users can access a resource/page or perform actions they
+should not be allowed to access or perform. For example, a user can view
+the administration interface without logging in or view other areas that
+only logged-in users should be able to see. (<a
+href="https://cwe.mitre.org/data/definitions/284.html">CWE-284</a>)</p>
+<h2 id="how-can-an-attacker-exploit-the-vulnerability">How Can an
+Attacker Exploit the Vulnerability?</h2>
+<p>Let’s assume a website has an administration interface that is
+accessible at <code>https://www.example.com/admin.php</code>. An
+attacker could guess this URL without knowing the URL beforehand or he
+could find a link to the admin page on the website. Then the attacker
+could open the URL of the admin interface in the browser. If the server
+does not verify whether the user is really logged in and is the
+administrator, the attacker may <strong>gain access to sensitive
+information</strong>, <strong>cause damage</strong>, or <strong>be able
+to take over the website</strong>.</p>
+<p>Another example is editing a post in a forum. The server should
+always check whether the requesting user is logged in and if it is his
+post that he wants to edit. Otherwise, an attacker could be able to edit
+another user’s posts.</p>
+<h2 id="how-can-you-fix-the-vulnerability">How Can You Fix the
+Vulnerability?</h2>
+<p>After a successful login, the server could store whether the user is
+logged in, for example, by storing the user’s ID in the session:</p>
+<pre class="language-php line-numbers"><code>
+// login was successful
+$_SESSION['user_id'] = $ID_OF_THE_USER;
+</code></pre>
+<p>On the page that should only be accessible by a logged-in user, the
+server would then be able to check whether this variable is set:</p>
+<pre class="language-php line-numbers" data-line="8"><code>
+&lt;?php
+// if the user is not logged in
+if (!isset($_SESSION['user_id'])) {
+    // redirect user to http://www.example.com/login.php
+    header("Location: http://www.example.com/login.php");
+    
+    // very important! stop executing the code below
+    exit;
+}
+
+// remaining code of the page
+foobar(); // this code is not executed if the user is not logged in
+?>
+
+Some text that should only be sent to users who are logged in.
+</code></pre>
+<p>If the user is not logged in, he will be redirected to the login
+page. This is accomplished by sending the HTTP header
+<code>Location</code> that signals the browser to load another page.
+After sending the <code>Location</code> header, however, the rest of the
+code would still be executed (<code>foobar()</code>) and the page
+content is also sent to the browser
+(<code>Some text that should only be sent to users who are logged in.</code>).
+The user usually does not notice this, because the browser immediately
+loads the login page. However, an attacker receives the content from the
+server and can view it without any problems.</p>
+<p>Therefore, it is very important that the <strong>execution of the
+remaining code is stopped by terminating the script</strong> with
+<code>exit;</code>.</p>
+<p>Finally, note that the variable <code>$_SESSION['user_id']</code>
+must be deleted when the user logs off:</p>
+<pre class="language-php line-numbers"><code>
+// after user has logged out:
+unset($_SESSION['user_id']);
+</code></pre>
+</main>
+</body>
+</html>

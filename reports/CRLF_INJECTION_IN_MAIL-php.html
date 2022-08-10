@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>CRLF Injection in Email</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: 1;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="static/pandoc-theme.css" />
+  <link rel="stylesheet" href="static/prism.css" />
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+  <script src="static/prism.js"></script>
+</head>
+<body>
+<main>
+<header id="title-block-header">
+<h1 class="title">CRLF Injection in Email</h1>
+</header>
+<nav id="toc" role="doc-toc">
+<h2 id="toc-title">Contents</h2>
+<ul>
+<li><a href="#how-can-an-attacker-exploit-the-vulnerability"
+id="toc-how-can-an-attacker-exploit-the-vulnerability">How Can an
+Attacker Exploit the Vulnerability?</a></li>
+<li><a href="#how-can-you-fix-the-vulnerability"
+id="toc-how-can-you-fix-the-vulnerability">How Can You Fix the
+Vulnerability?</a></li>
+</ul>
+</nav>
+<p>In a CRLF injection attack, an attacker modifies or adds headers to
+an email that is sent from the software to a user. The software
+constructs the email headers using user input, e.g., from an input field
+on the website, without neutralizing the “new line” characters (CRLF).
+As the CRLF characters are used to separate email headers, an attacker
+can inject headers such as other recipients. This may allow an attacker
+to send spam emails to others using the software. (<a
+href="https://cwe.mitre.org/data/definitions/93.html">CWE-93</a>)</p>
+<h2 id="how-can-an-attacker-exploit-the-vulnerability">How Can an
+Attacker Exploit the Vulnerability?</h2>
+<p>Let’s assume a website has a contact form where a user can send an
+email to the website owner:</p>
+<pre class="language-php line-numbers"><code>
+$headers = "From: " . $_POST['email'] . "\r\n";
+mail("contact@example.org", $_POST['subject'], $_POST['text'], $headers);
+</code></pre>
+<p>The email headers supplied to the <code>mail</code> function can
+contain data such as the sender or the receiver of the email. In the
+snippet above the email header only consists of the <code>From</code>
+header that uses the email supplied by the user in the contact form
+(<code>$_POST['email']</code>).</p>
+<p>If the user enters <code>tom@example.org</code> as
+<code>email</code>, the resulting email header (<code>$headers</code>)
+is:</p>
+<pre class="language-http line-numbers"><code>
+From: tom@example.org\r\n
+</code></pre>
+<p>Let’s assume an attacker enters the following string as
+<code>email</code>:</p>
+<pre class="language-http line-numbers"><code>
+tom@example.org\r\n
+Cc: somebody@example.org
+</code></pre>
+<p>Then the resulting email headers (<code>$headers</code>) are:</p>
+<pre class="language-http line-numbers"><code>
+From: tom@example.org\r\n
+Cc: somebody@example.org\r\n
+</code></pre>
+<p>Email headers are separated by special control characters that mark a
+line break (<code>\r\n</code>, called Carriage Return and Line Feed, or
+CRLF). If the software does not validate the user input, an attacker can
+use these characters to add new headers to the email. In this case, the
+attacker inserted a line break and added a <code>Cc</code> header such
+that the email is also sent to <code>somebody@example.org</code>.</p>
+<p>An attacker could manipulate the email headers to <strong>send large
+numbers of messages anonymously</strong>, e.g., to send spam emails
+others.</p>
+<h2 id="how-can-you-fix-the-vulnerability">How Can You Fix the
+Vulnerability?</h2>
+<p>CRLF injection attacks in email headers can be prevented by
+validating the user input that is used in the email header. The software
+should <strong>prohibit the use of any newline characters in the
+input</strong>.</p>
+<p>To validate an email address before it is used in the email header,
+the <code>filter_var()</code> function in PHP can be used:</p>
+<pre class="language-php line-numbers" data-line="1-2"><code>
+if (!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
+    echo "The email address is invalid.";
+}
+else {
+    $headers = "From: " . $_POST['email'] . "\r\n";
+    mail("contact@example.org", $_POST['subject'], $_POST['text'], $headers);
+}
+</code></pre>
+<p>If the email specified by the user contains a line break, the script
+considers this email invalid and prints an error message. The email is
+not sent.</p>
+</main>
+</body>
+</html>

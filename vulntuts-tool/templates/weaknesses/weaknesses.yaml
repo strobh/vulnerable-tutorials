@@ -1,0 +1,352 @@
+# https://cwe.mitre.org/data/definitions/22.html
+PATH_TRAVERSAL:
+    name: Path Traversal
+    description: >-
+        The software uses input from a user to construct a path (for a file or 
+        directory) without neutralizing special characters like `..`.
+        This allows an attacker to manipulate the path such that files or directories
+        outside of the intended directory are accessed.
+        For example, if a server reads the file identified by this path and sends it to
+        the user, the user can access and read the content of any (sensitive) file on
+        the host.
+    cwe: 22
+
+# https://cwe.mitre.org/data/definitions/284.html
+# The software does not restrict access to a resource from an unauthorized actor.
+BROKEN_ACCESS_CONTROL:
+    name: Broken Access Control
+    description: >-
+        Unauthorized users can access a resource/page or perform actions they should
+        not be allowed to access or perform.
+        For example, a user can view the administration interface without logging in or
+        view other areas that only logged-in users should be able to see.
+    cwe: 284
+
+# https://cwe.mitre.org/data/definitions/219.html
+SENSITIVE_FILE_UNDER_WEB_ROOT:
+    name: File with Sensitive Data Under Web Root
+    description: >-
+        A file with sensitive data is stored under the web document root.
+        This allows an attacker to access the file (e.g., by opening it in the browser)
+        and obtain these sensitive data (such as passwords).
+    cwe: 219
+
+# https://cwe.mitre.org/data/definitions/352.html
+CSRF:
+    name: Cross-Site Request Forgery (CSRF)
+    description:
+    cwe: 352
+
+# https://cwe.mitre.org/data/definitions/601.html
+OPEN_REDIRECT:
+    name: Open Redirect
+    description:
+    cwe: 601
+
+# https://cwe.mitre.org/data/definitions/377.html
+INSECURE_TEMPORARY_FILE:
+    name: Insecure Temporary File
+    description: >-
+        Creating and using insecure temporary files can leave application and system
+        data vulnerable to attacks.
+        For example, the application may create or "reserve" a filename for a temporary
+        file, but create the file later instead of immediately.
+        In the meantime, however, another program might have manipulated the file or
+        created a symbolic link to another file at the expected location.
+    cwe: 377
+
+# https://cwe.mitre.org/data/definitions/327.html
+BROKEN_CRYPTO:
+    name: Use of a Broken or Risky Cryptographic Algorithm
+    description: >-
+        The software uses an insecure/broken cryptographic algorithm: well-known
+        techniques exist to break the algorithm.
+        An attacker may be able to compromise whatever data has been
+        protected/encrypted.
+    cwe: 327
+
+# https://cwe.mitre.org/data/definitions/328.html
+WEAK_HASH:
+    name: Use of Weak Hash
+    description: >-
+        The software uses an insecure/broken hashing algorithm: well-known
+        techniques exist to break the algorithm.
+        It should not never be used to hash sensitive data.
+        An attacker may be able to determine the original input or find another input
+        that produces the same hash.
+    cwe: 328
+
+# https://cwe.mitre.org/data/definitions/916.html
+INSECURE_PW_HASHING:
+    name: Insecure Password Hashing
+    description: >-
+        The software generates a hash for a password using a hashing scheme that does
+        not provide a sufficient level of computational effort.
+        This makes it easier for an attacker to crack the password, e.g., by
+        performing a brute-force attack.
+    cwe: 916
+
+# https://cwe.mitre.org/data/definitions/760.html
+FIXED_SALT:
+    name: Insecure Password Hashing (Predictable/Fixed Salt)
+    description: >-
+        The software generates a hash for a password that should not be reversible,
+        but the software uses a predictable salt as part of the input.
+        This makes it easier for an attacker to crack the password, e.g., by
+        performing a brute-force attack.
+    cwe: 760
+
+# https://cwe.mitre.org/data/definitions/330.html
+INSECURE_RANDOM:
+    name: Use of Insufficiently Random Values
+    description: >-
+        The software uses insufficiently random numbers or strings in a security
+        context.
+        It may be possible for an attacker to guess or predict the value that is
+        supposed to be random.
+        This can be used by the attacker to access sensitive information or to
+        impersonate another user.
+    cwe: 330
+
+# https://cwe.mitre.org/data/definitions/89.html
+SQLI:
+    name: SQL Injection
+    description: >-
+        In an SQL injection attack, an attacker modifies an SQL query that is executed
+        by a database. The application constructs the SQL query using user input,
+        e.g., from an input field on the website, without neutralizing special
+        characters that modify the query. When the malicious statement is successfully
+        executed, the attacker can read sensitive data from the database, modify data,
+        or might even be able to delete the complete database.
+    cwe: 89
+
+# https://cwe.mitre.org/data/definitions/79.html
+REFLECTED_XSS:
+    name: Reflected Cross-site Scripting (XSS)
+    description: >-
+        The software prints user input on a web page that is served to other users
+        without neutralizing special characters.
+        This allows an attacker to inject client-side scripts that are executed on
+        the other user's device.
+        The attacker can perform a variety of malicious activities such as obtaining
+        session information to log in as the attacked user or sending malicious
+        requests to a website on behalf of the victim.
+        In a reflected cross-site-scripting attack, the server reads the user input
+        directly from the HTTP request, e.g., a GET parameter.
+    cwe: 79
+
+# https://cwe.mitre.org/data/definitions/79.html
+STORED_XSS:
+    name: Stored Cross-site Scripting (XSS)
+    description: >-
+        The software prints user input on a web page that is served to other users
+        without neutralizing special characters.
+        This allows an attacker to inject client-side scripts that are executed on
+        the other user's device.
+        The attacker can perform a variety of malicious activities such as obtaining
+        session information to log in as the attacked user or sending malicious
+        requests to a website on behalf of the victim.
+        In a stored cross-site-scripting attack, the server stores the user input on
+        the server, e.g., in a database of a forum or a comment section.
+    cwe: 79
+
+# https://cwe.mitre.org/data/definitions/79.html
+STORED_XSS_IN_MAIL:
+    name: Cross-site Scripting (XSS) in Email
+    description: >-
+        The software prints user input in an HTML email that is send to other users
+        without neutralizing special characters.
+        This allows an attacker to inject client-side scripts that are executed on
+        the recipient's device when the email is viewed.
+        The attacker can perform a variety of malicious activities.
+    cwe: 79
+
+# https://cwe.mitre.org/data/definitions/93.html
+CRLF_INJECTION:
+    name: CRLF Injection
+    description:
+    cwe: 93
+
+# https://cwe.mitre.org/data/definitions/93.html
+CRLF_INJECTION_IN_MAIL:
+    name: CRLF Injection in Email
+    description: >-
+        In a CRLF injection attack, an attacker modifies or adds headers to an email
+        that is sent from the software to a user.
+        The software constructs the email headers using user input, e.g., from an input
+        field on the website, without neutralizing the "new line" characters (CRLF).
+        As the CRLF characters are used to separate email headers, an attacker can
+        inject headers such as other recipients.
+        This may allow an attacker to send spam emails to others using the software.
+    cwe: 93
+
+# https://cwe.mitre.org/data/definitions/77.html
+COMMAND_INJECTION:
+    name: Command Injection
+    description:
+    cwe: 77
+
+# https://cwe.mitre.org/data/definitions/91.html
+XML_INJECTION:
+    name: XML Injection
+    description:
+    cwe: 91
+
+# https://cwe.mitre.org/data/definitions/643.html
+XPATH_INJECTION:
+    name: XPath Injection
+    description:
+    cwe: 643
+
+# https://cwe.mitre.org/data/definitions/312.html
+CLEARTEXT_PW:
+    name: Cleartext Storage of Passwords
+    description: >-
+        The software stores passwords or other sensitive information in cleartext.
+        If an attacker gains access to them, he can read and use all passwords,
+        possibly even for an administrator account.
+    cwe: 312
+
+# https://cwe.mitre.org/data/definitions/434.html
+UNRESTRICTED_FILE_UPLOAD:
+    name: Unrestricted Upload of File with Dangerous Type
+    description: >-
+        The software allows the attacker to upload files of dangerous types.
+        This allows an attacker to upload a script or application that is executed
+        by the server/software.
+    cwe: 434
+
+# https://cwe.mitre.org/data/definitions/602.html
+CLIENT_SIDE_VALIDATION:
+    name: Client-Side Validation without Server-Side Validation
+    description: >-
+        The software validates user input on the client side, but not on the server.
+        The server relies solely on the client to validate the data.
+        An attacker might disable the validation on the client-side (e.g., disable
+        JavaScript in the browser) and send malicious data to the server that is not
+        validated.
+    cwe: 602 
+
+# https://cwe.mitre.org/data/definitions/611.html
+XXE_ATTACK:
+    name: Improper Restriction of XML External Entity Reference
+    description: >-
+        The software processes an XML document that can contain XML entities with URIs
+        that resolve to external documents, causing the product to embed incorrect
+        documents into its output.
+        This allows an attacker to access/read the content of any (sensitive) file on
+        the host or to perform a server-side request forgery (SSRF) attack.
+    cwe: 611
+
+# https://cwe.mitre.org/data/definitions/287.html
+BROKEN_AUTHENTICATION:
+    name: Improper Authentication
+    description: >-
+        When a user claims to have a given identity, the software does not check or
+        insufficiently checks that the claim is correct.
+        This allows an attacker to impersonate another user and act as that user
+        (e.g., as if he was logged in as that user).
+    cwe: 287
+
+# https://cwe.mitre.org/data/definitions/284.html
+BROKEN_REDIRECT_UNAUTHORIZED:
+    name: Improper Access Control (Broken Redirect)
+    description: >-
+        Unauthorized users can access a resource/page or perform actions they should
+        not be allowed to access or perform.
+        For example, a user can view the administration interface without logging in or
+        view other areas that only logged-in users should be able to see.
+        This is caused by the fact that a user who is not logged in is redirected to
+        another page, e.g., the login page.
+        To redirect the user, a `Location` header is sent.
+        However, the content of the page that should be sent only to logged-in users
+        is also sent in the response and can be viewed by an attacker.
+    cwe: 284
+
+# https://cwe.mitre.org/data/definitions/384.html
+SESSION_FIXATION:
+    name: Session Fixation
+    description:
+    cwe: 384
+
+# https://cwe.mitre.org/data/definitions/798.html
+HARDCODED_PW:
+    name: Use of Hard-coded Passwords/Credentials
+    description: >-
+        The software uses hard-coded credentials, such as a password or a cryptographic
+        key, to authenticate users or to encrypt data.
+        This hard-coded credentials are the same for each installation of the software,
+        and they usually cannot be changed without manually modifying the program.
+        If the password is ever discovered or published (e.g., in the source code on
+        GitHub), then anybody with knowledge of this password can access the product.
+    cwe: 798
+
+# https://cwe.mitre.org/data/definitions/798.html
+FIXED_SECRET:
+    name: Use of Hard-coded Credentials/Secrets
+    description: >-
+        The software uses hard-coded credentials, such as a password or a OTP secret,
+        to authenticate users.
+        The hard-coded credentials are the same for every user and every installation
+        of the software.
+        If an attacker knows the hard-coded credentials from his own account or
+        another installation of the software, he can bypass the authentication.
+        This may allow an attacker to log in as administrator or as another user.
+    cwe: 798
+
+# https://cwe.mitre.org/data/definitions/640.html
+BROKEN_FORGOT_PASSWORD:
+    name: Weak Password Recovery Mechanism for Forgotten Password
+    description: >-
+        The software contains a mechanism for users to recover or change their
+        passwords if they forgot the original password, but the mechanism is weak.
+        This allows an attacker to change the password of another user and gain access
+        to that user's account.
+    cwe: 640
+
+# https://cwe.mitre.org/data/definitions/620.html
+BROKEN_CHANGE_PASSWORD:
+    name: Unverified Password Change
+    description:
+    cwe: 620
+
+# https://cwe.mitre.org/data/definitions/295.html
+INVALID_CERTIFICATE_VALIDATION:
+    name: Improper Certificate Validation
+    description: >-
+        The software does not validate or incorrectly validates a certificate.
+        This might allow an attacker to spoof a trusted server or act as a
+        man-in-the-middle by interfering in the communication path between the host and
+        client.
+        The attacker might be able to intercept sensitive data or send data that appear
+        to originate from a trusted server.
+    cwe: 295
+
+# https://cwe.mitre.org/data/definitions/502.html
+DESERIALIZATION_UNTRUSTED_DATA:
+    name: Deserialization of Untrusted Data
+    description: >-
+        The application deserializes untrusted data without sufficiently verifying that
+        the resulting data will be valid.
+        Depending on the use of the deserialized data, this has different consequences.
+        Under certain conditions, an attacker might be able to manipulate the
+        serialized data such that the application executes malicious code.
+    cwe: 502
+
+# https://cwe.mitre.org/data/definitions/565.html
+COOKIE_WITHOUT_INTEGRITY_CHECK:
+    name: Reliance on Cookies without Validation and Integrity Checking
+    description:
+    cwe: 565
+
+# https://cwe.mitre.org/data/definitions/117.html
+LOG_FILE_INJECTION:
+    name: Improper Output Neutralization for Logs
+    description:
+    cwe: 117
+
+# https://cwe.mitre.org/data/definitions/532.html
+LOG_FILE_SENSITIVE_INFORMATION:
+    name: Insertion of Sensitive Information into Log File
+    description:
+    cwe: 532

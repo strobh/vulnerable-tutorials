@@ -1,0 +1,117 @@
+# APIs
+# ----
+# Parameters and credentials for the APIs of Google (Custom Search API),
+# YouTube (YouTube Data API) and Twitter (Twitter API).
+# The YouTube Data API is also used to retrieve metadata about tutorial videos
+# during inspection and scanning.
+
+apis:
+    google:
+        search_engine_id: YOUR_SEARCH_ENGINE_ID
+        api_key: YOUR_API_KEY
+    youtube:
+        api_key: YOUR_API_KEY
+    twitter:
+        bearer_token: YOUR_BEARER_TOKEN
+
+
+# SEARCH
+# ------
+# Config for searching tutorials (`vulntuts search`):
+# - `language` defines the language of the tutorials to be searched and is
+#   passed to the search engines.
+#   Default: en
+# - `num_results` defines the number of results to fetch from the search 
+#   engines. The highest rank up to which search results should then actually
+#   be used for the manual inspection (can be a subset of the search results)
+#   is defined under `sampling`.
+#   Default: 30 results for Google (3 pages) and the maximum number of results
+#   that are allowed to be retrieved in one request for YouTube (50) and
+#   Twitter (500).
+
+search:
+    google:
+        language: en
+        num_results: 30
+    youtube:
+        language: en
+        num_results: 50
+    twitter:
+        language: en
+        num_results: 500
+
+
+# SAMPLING
+# --------
+# Config for sampling search results for the manual inspection (`vulntuts sample`):
+# - `max_rank` defines the highest rank up to which search results should be
+#   included in the sample.
+#   Default:
+#     google:  30
+#     youtube: 50
+#     twitter: 50
+#   Example:
+#     If you set the max rank for Google to 10, only the first result page is
+#     considered.
+# - `proportion`: The proportion of inspection types and engine results in the
+#   final sample.
+#   First, the search results are filtered by type (video or webpage). Second,
+#   the search results are filtered by their source engine (Google, YouTube or
+#   Twitter). Then the sample is drawn from each subset of search results
+#   (filtered by inspection type and search engine) according to the defined
+#   proportion. Finally, the samples are combined into one final sample.
+#   The proportion for the different inspection type is required (config option
+#   `sampling.proportion.type`). The proportion for the search engines (config
+#   option `sampling.proportion.engine`) can be left empty (value `null`)
+#   resulting in drawing the sample from all search engines without considering
+#   their proportion in the final sample. This means that a search engine with
+#   a large number of results will also be represented more often in the sample
+#   than a search engine with few results.
+#   Duplicate inspections are prevented. The sample size itself is specified in
+#   the sample command.
+#   Default:
+#     - Videos and websites each account for 50% of inspections.
+#     - Videos are sampled from all search engines without considering their
+#       proportion.
+#     - Webpages are sampled such that 80% of the sample are results from
+#       Google and 20% of the sample are results from Twitter.
+# - `excluded_domains`: The list of first-level domains that should be excluded
+#   from the sample.
+#   Default: By default the list is empty. In this example config, the list
+#   contains Q&A platforms, commercial programming tutorials, and the official
+#   documentations of programming languages.
+
+sampling:
+    max_rank:
+        google: 30
+        youtube: 50
+        twitter: 50
+    proportion:
+        type:
+            video: 0.5
+            webpage: 0.5
+        engine:
+            video: null
+            webpage:
+                google: 0.8
+                twitter: 0.2
+    excluded_domains:
+        # Q&A platforms
+        - stackoverflow.com
+        - stackexchange.com
+        - quora.com
+        # commercial programming tutorials
+        - codecademy.com
+        - laracasts.com
+        - udemy.com
+        # documentation
+        - php.net
+        - python.org
+        - mozilla.org  # JavaScript: https://developer.mozilla.org/de/docs/Web/JavaScript
+        - oracle.com  # Java: https://docs.oracle.com/en/java/
+        - google.com  # Google Cloud
+        - microsoft.com  # Microsoft Azure
+        - amazon.com  # Amazon AWS
+        # others
+        - github.com
+        - twitter.com
